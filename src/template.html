@@ -1,0 +1,1321 @@
+<title>Auth en 10 Minutos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Borel&family=IBM+Plex+Mono:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap">
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   THE NEXT CRAFT × CLERK — deck
+   Sistema de diseño heredado de crafter-station/the-next-craft (DESIGN.md):
+   "COMMODORE 64 MONO". B&N estricto, un solo tema (es un monitor encendido).
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  /* Paleta B&N vintage — negro cálido tipo Apple '99 */
+  --void: #1a1a17;
+  --screen: #1a1a17;
+  --screen-dim: #161613;
+  --line: #8c8a82;
+  --bright: #e9e7de;
+  --text: #f2f0e9;
+  --text-dim: #b8b6ab;
+  --bone: #e6e3d8;
+  --key-shadow: #8c8a82;
+  --border: rgb(140 138 130 / 45%);
+
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-pixel: "Silkscreen", "IBM Plex Mono", monospace;
+  --font-script: "Borel", "Brush Script MT", cursive;
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* Coordenadas del escenario 16:9 — todo se mide contra esto */
+  --stage-w: 1280px;
+  --stage-h: 720px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--bright); color: var(--void); }
+
+:focus-visible {
+  outline: 2px solid var(--bright);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ─── Escenario: 1280×720 escalado a la ventana (letterbox) ───────────── */
+
+.deck {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--void);
+}
+
+.stage-scaler {
+  width: var(--stage-w);
+  height: var(--stage-h);
+  transform: scale(var(--scale, 1));
+  transform-origin: center center;
+  position: relative;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  background: var(--screen);
+  padding: 64px 76px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.deck[data-mounted="true"] .slide {
+  transition:
+    opacity 220ms var(--ease-out-strong),
+    transform 220ms var(--ease-out-strong);
+}
+
+.slide[data-active="true"] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* Cuadrícula CRT sutil de fondo */
+.slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(140 138 130 / 7%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(140 138 130 / 7%) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+}
+
+/* Scanlines: textura de pantalla encendida */
+.slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 6%) 0, rgb(0 0 0 / 6%) 1px,
+    transparent 1px, transparent 4px
+  );
+}
+
+.slide-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  flex: 1;
+  min-height: 0;
+}
+
+.slide-body[data-center="true"] {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* El encabezado queda anclado arriba (no salta entre diapositivas) y es el
+   bloque principal el que estira para ocupar el alto restante. */
+.fill { flex: 1 1 auto; min-height: 0; }
+.grid-table.fill { grid-auto-rows: 1fr; }
+.grid-table.fill .cell { justify-content: center; }
+.contrast.fill .cell { justify-content: flex-start; }
+.timeline.fill li { flex: 1; align-items: center; }
+.terminal.fill { display: flex; flex-direction: column; }
+.terminal.fill .terminal-body { flex: 1; }
+.stat-row.fill { align-items: center; }
+
+/* ─── Tipografía ──────────────────────────────────────────────────────── */
+
+.basic-line {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0;
+}
+.basic-line b { color: var(--bright); font-weight: 600; }
+
+.pixel-heading {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  text-wrap: balance;
+  margin: 0;
+  font-size: 44px;
+}
+
+.pixel-heading.sm { font-size: 36px; }
+.pixel-heading.lg { font-size: 58px; }
+
+.lead {
+  font-family: var(--font-mono);
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+  margin: 0;
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+
+.dim { color: var(--text-dim); }
+.bright { color: var(--bright); }
+
+.note {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.wordmark {
+  font-family: var(--font-script);
+  color: var(--bright);
+  line-height: 1;
+  font-size: 46px;
+  padding-top: 10px;
+  display: inline-block;
+}
+
+.ready {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--bright);
+  margin: 0;
+}
+
+.cursor { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ─── Retícula compartida de 1px (tablas fusionadas) ──────────────────── */
+
+.grid-table {
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: var(--screen-dim);
+  display: grid;
+}
+.cell {
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.cell-title {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 20px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--text);
+}
+.cell-copy {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.cell-value {
+  font-family: var(--font-mono);
+  font-size: 19px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* Celda de framework: marca arriba, nombre debajo */
+.cell.fw { gap: 12px; }
+.fw-mark {
+  display: block;
+  width: 30px;
+  height: 30px;
+  color: var(--text);
+}
+.fw-mark svg { display: block; width: 100%; height: 100%; }
+
+/* ─── Terminal: el motivo que se repite ───────────────────────────────── */
+
+.terminal {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.terminal-body {
+  padding: 20px 22px;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.terminal-body.lg { font-size: 24px; }
+
+.terminal-body .prompt { color: var(--line); user-select: none; }
+.terminal-body .cmd { color: var(--bright); font-weight: 600; }
+.terminal-body .comment { color: var(--text-dim); }
+.terminal-body .out { color: var(--text-dim); }
+.terminal-body .ok { color: var(--text); }
+
+/* Barra-enlace: descripcion a la izquierda, destino a la derecha */
+.linkbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: border-color 150ms ease-out, color 150ms ease-out;
+}
+.linkbar:hover { border-color: var(--bright); color: var(--text); }
+.linkbar-url {
+  flex-shrink: 0;
+  color: var(--bright);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ─── Chips ───────────────────────────────────────────────────────────── */
+
+.chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  padding: 9px 14px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.chip.muted { color: var(--text-dim); }
+
+/* ─── Contraste: antes / después ──────────────────────────────────────── */
+
+.contrast { display: grid; grid-template-columns: 1fr 1fr; }
+.contrast-col { gap: 14px; }
+.contrast-col .label { letter-spacing: 0.14em; }
+.contrast-col[data-strong="true"] .label { color: var(--bright); }
+.contrast-items { display: grid; gap: 8px; }
+.contrast-item {
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.contrast-item.literal {
+  text-transform: none;
+  font-size: 22px;
+  letter-spacing: 0;
+  color: var(--bright);
+}
+
+.contrast-col[data-strong="true"] .contrast-item {
+  color: var(--text);
+  background: var(--screen);
+}
+
+/* ─── FlowMap: pasos encadenados ──────────────────────────────────────── */
+
+.flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.flow-step {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 172px;
+}
+.flow-step .num {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--bright);
+  font-variant-numeric: tabular-nums;
+}
+.flow-step .arrow {
+  position: absolute;
+  right: -13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bright);
+  font-family: var(--font-mono);
+  z-index: 2;
+}
+
+/* ─── Timeline ────────────────────────────────────────────────────────── */
+
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.timeline li {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 11px 0 11px 18px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--text);
+}
+.timeline li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px; height: 6px;
+  background: var(--bright);
+}
+.timeline .t {
+  flex-shrink: 0;
+  width: 58px;
+  color: var(--bright);
+  font-variant-numeric: tabular-nums;
+  font-size: 17px;
+}
+
+/* ─── Stats ───────────────────────────────────────────────────────────── */
+
+.stat-row { display: flex; flex-wrap: wrap; gap: 52px; }
+.stat { display: flex; flex-direction: column; gap: 6px; }
+.stat .v {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 62px;
+  line-height: 1;
+  color: var(--text);
+  white-space: nowrap;
+}
+.stat .l {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ─── Logos ───────────────────────────────────────────────────────────── */
+
+.logo { display: block; color: var(--text); }
+.logo svg { display: block; width: 100%; height: 100%; }
+
+.logo-lockup {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.logo-lockup .x {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--line);
+}
+
+/* ─── Keycaps ─────────────────────────────────────────────────────────── */
+
+.keycap {
+  background: var(--bone);
+  color: var(--void);
+  border: 1px solid var(--key-shadow);
+  border-radius: 6px;
+  box-shadow: 0 2px 0 var(--key-shadow);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  cursor: pointer;
+  transform: translateY(0);
+}
+.keycap:hover { background: #f4f2ea; }
+.keycap:active { transform: translateY(2px); box-shadow: 0 0 0 var(--key-shadow); }
+.keycap:disabled { opacity: 0.35; cursor: default; }
+.keycap:disabled:active { transform: none; box-shadow: 0 2px 0 var(--key-shadow); }
+
+.keycap-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 0 var(--line);
+}
+.keycap-ghost:hover { background: var(--screen-dim); }
+.keycap-ghost:active { box-shadow: 0 0 0 var(--line); }
+
+/* ─── Chrome del pager ────────────────────────────────────────────────── */
+
+.chrome {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.chrome > * { pointer-events: auto; }
+
+.topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+}
+.deck-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  max-width: 60vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.botbar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+}
+
+.counter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.progress {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.progress i {
+  width: 12px;
+  height: 4px;
+  background: var(--line);
+  opacity: 0.4;
+}
+.progress i.on { background: var(--bright); opacity: 1; }
+
+.pager-keys { display: flex; gap: 8px; }
+
+/* ─── Índice ──────────────────────────────────────────────────────────── */
+
+.index {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.index[hidden] { display: none; }
+.index-backdrop { position: absolute; inset: 0; background: rgb(26 26 23 / 94%); }
+.index-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen-dim);
+  border: 1px solid var(--line);
+}
+.index-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.index-list { list-style: none; margin: 0; padding: 12px; overflow-y: auto; }
+.index-btn {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: left;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out;
+}
+.index-btn:hover, .index-btn:focus-visible {
+  color: var(--text);
+  background: var(--void);
+  border-color: var(--line);
+}
+.index-btn[aria-current="true"] {
+  color: var(--bright);
+  background: var(--void);
+  border-color: var(--bright);
+}
+.index-num {
+  flex-shrink: 0;
+  width: 26px;
+  font-variant-numeric: tabular-nums;
+  color: var(--line);
+}
+.index-btn[aria-current="true"] .index-num { color: var(--bright); }
+
+/* ─── Boot loader ─────────────────────────────────────────────────────── */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--void);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 clamp(24px, 8vw, 120px);
+  gap: 22px;
+  transition: transform 620ms var(--ease-in-out-strong);
+}
+.boot[data-done="true"] { transform: translateY(-100%); }
+.boot[hidden] { display: none; }
+.boot-log {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--text-dim);
+  white-space: pre;
+}
+.boot-count {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: clamp(40px, 9vw, 88px);
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.boot-bar {
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 2.2vw, 20px);
+  letter-spacing: 0.06em;
+  color: var(--bright);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ─── Movimiento reducido ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .deck[data-mounted="true"] .slide { transition: none; transform: none; }
+  .cursor { animation: none; }
+  .boot { transition: none; }
+}
+
+/* ─── Impresión → PDF 16:9 ────────────────────────────────────────────── */
+
+@page { size: 1280px 720px; margin: 0; }
+
+@media print {
+  body { overflow: visible; background: #fff; }
+  .chrome, .index, .boot { display: none !important; }
+  .deck { position: static; display: block; }
+  .stage-scaler { transform: none; width: 1280px; height: auto; }
+  .slide {
+    position: relative;
+    inset: auto;
+    width: 1280px;
+    height: 720px;
+    opacity: 1;
+    transform: none;
+    page-break-after: always;
+    break-after: page;
+  }
+  .slide::after { display: none; }
+}
+</style>
+
+<a class="sr-only" href="#slide-1">Saltar controles — ir a la primera diapositiva</a>
+
+<div class="boot" id="boot" aria-hidden="true">
+  <div class="boot-log" id="boot-log"></div>
+  <div class="boot-count" id="boot-count">000</div>
+  <div class="boot-bar" id="boot-bar"></div>
+</div>
+
+<div class="deck" id="deck">
+  <div class="stage-scaler" id="stage">
+
+    <!-- ═══ 01 · PORTADA ═══════════════════════════════════════════════ -->
+    <section class="slide" id="slide-1" data-title="Portada">
+      <div class="slide-body" data-center="true">
+        <div class="logo-lockup" style="margin-bottom: 4px;">
+          <span class="logo" style="width:118px;height:34px;" role="img" aria-label="Clerk">%%CLERK_WORDMARK%%</span>
+          <span class="x">×</span>
+          <span class="logo" style="width:168px;height:23px;" role="img" aria-label="Crafter Station">%%CRAFTER%%</span>
+        </div>
+        <h1 class="pixel-heading lg" data-scramble style="max-width: 21ch;">Agrega auth a tu app en menos de 10 min</h1>
+        <span class="wordmark">the next craft</span>
+        <p class="note">Ignacio Rueda · <span class="bright">@jibaru</span> · Software Engineer @ Clerk</p>
+        <p class="ready">READY.<span class="cursor">█</span></p>
+      </div>
+    </section>
+
+    <!-- ═══ 02 · QUIÉN SOY ═════════════════════════════════════════════ -->
+    <section class="slide" data-title="Quién soy">
+      <div class="slide-body">
+        <p class="basic-line">10 <b>PRINT "QUIÉN SOY"</b></p>
+        <h2 class="pixel-heading" data-scramble>Ignacio Rueda</h2>
+        <p class="lead">Le meto código a <span class="bright">Clerk</span> desde Lima. Construyo con <span class="bright">Crafter Station</span> y grabo lo que aprendo.</p>
+        <div class="grid-table cols-4 fill" style="margin-top:4px;">
+          <div class="cell"><span class="label">Rol</span><span class="cell-value">Software Engineer<br>@ Clerk</span></div>
+          <div class="cell"><span class="label">Comunidad</span><span class="cell-value">Crafter Station</span></div>
+          <div class="cell"><span class="label">Base</span><span class="cell-value">Lima, Perú</span></div>
+          <div class="cell"><span class="label">Web</span><span class="cell-value bright">jibaru.dev</span></div>
+        </div>
+        <div class="chips" style="margin-top:2px;">
+          <span class="chip muted">X · @IgnacioRuedaB</span>
+          <span class="chip muted">GitHub · jibaru</span>
+          <span class="chip muted">YouTube · @ignacio-rueda</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 03 · EL PROBLEMA ═══════════════════════════════════════════ -->
+    <section class="slide" data-title="Auth a mano">
+      <div class="slide-body">
+        <p class="basic-line">20 <b>PRINT "EL PROBLEMA"</b></p>
+        <h2 class="pixel-heading" data-scramble>Auth a mano son semanas</h2>
+        <div class="contrast grid-table cols-2 fill" style="margin-top:2px;">
+          <div class="cell contrast-col">
+            <span class="label">A mano</span>
+            <div class="contrast-items">
+              <div class="contrast-item">Hash de passwords</div>
+              <div class="contrast-item">Sesiones y refresh tokens</div>
+              <div class="contrast-item">OAuth, proveedor por proveedor</div>
+              <div class="contrast-item">MFA, reset, magic links</div>
+              <div class="contrast-item">Panel para ver usuarios</div>
+            </div>
+          </div>
+          <div class="cell contrast-col" data-strong="true">
+            <span class="label">Con Clerk</span>
+            <div class="contrast-items">
+              <div class="contrast-item literal">npx clerk init</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 04 · QUÉ ES CLERK ══════════════════════════════════════════ -->
+    <section class="slide" data-title="Qué es Clerk">
+      <div class="slide-body">
+        <p class="basic-line">30 <b>PRINT "QUÉ ES CLERK"</b></p>
+        <span class="logo" style="width:210px;height:61px;margin:2px 0;" role="img" aria-label="Clerk">%%CLERK_WORDMARK%%</span>
+        <p class="lead">Autenticación y gestión de usuarios completas. Llegan como <span class="bright">componentes que ya funcionan</span>, no como un SDK que te toca cablear.</p>
+        <div class="stat-row fill" style="margin-top:10px;">
+          <div class="stat"><span class="v">1</span><span class="l">Componente para tener login</span></div>
+          <div class="stat"><span class="v">0</span><span class="l">Tablas de usuarios que mantener</span></div>
+          <div class="stat"><span class="v">50K</span><span class="l">Usuarios retenidos gratis al mes</span></div>
+        </div>
+        <a class="linkbar" href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer">
+          <span>Y un dashboard de verdad: usuarios, sesiones, organizaciones y logs, sin que construyas un panel de admin.</span>
+          <span class="linkbar-url">dashboard.clerk.com &rarr;</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══ 05 · QUÉ TRAE ══════════════════════════════════════════════ -->
+    <section class="slide" data-title="Qué trae">
+      <div class="slide-body">
+        <p class="basic-line">40 <b>PRINT "QUÉ TRAE"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Todo lo que ibas a escribir a mano</h2>
+        <div class="grid-table cols-3 fill" style="margin-top:2px;">
+          <div class="cell">
+            <span class="cell-title">Componentes</span>
+            <span class="cell-copy">&lt;SignIn /&gt;, &lt;SignUp /&gt; y &lt;UserButton /&gt; con tu marca.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Organizations</span>
+            <span class="cell-copy">Multi-tenant B2B: equipos, roles e invitaciones.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Billing</span>
+            <span class="cell-copy">Suscripciones y features bajo llave por plan.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Seguridad</span>
+            <span class="cell-copy">MFA, passkeys y detección de bots por defecto.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">SSO</span>
+            <span class="cell-copy">Google, GitHub y SAML para empresas.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Webhooks</span>
+            <span class="cell-copy">Cada evento de usuario, directo a tu base.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 06 · FUNCIONA CON ══════════════════════════════════════════ -->
+    <section class="slide" data-title="Funciona con">
+      <div class="slide-body">
+        <p class="basic-line">50 <b>PRINT "FUNCIONA CON"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Tu stack ya tiene soporte</h2>
+        <div class="grid-table cols-4 fill" style="margin-top:2px;">
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Next.js">%%ICON:nextdotjs%%</span>
+            <span class="cell-value">Next.js</span>
+            <span class="label">El quickstart de hoy</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="React">%%ICON:react%%</span>
+            <span class="cell-value">React</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="React Router">%%ICON:reactrouter%%</span>
+            <span class="cell-value">React Router</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="TanStack Start">%%ICON:tanstack%%</span>
+            <span class="cell-value">TanStack Start</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Astro">%%ICON:astro%%</span>
+            <span class="cell-value">Astro</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Nuxt">%%ICON:nuxt%%</span>
+            <span class="cell-value">Nuxt</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Vue">%%ICON:vuedotjs%%</span>
+            <span class="cell-value">Vue</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Expo">%%ICON:expo%%</span>
+            <span class="cell-value">Expo</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Swift">%%ICON:swift%%</span>
+            <span class="cell-value">Swift</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Android">%%ICON:android%%</span>
+            <span class="cell-value">Android</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Express">%%ICON:express%%</span>
+            <span class="cell-value">Express</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Fastify">%%ICON:fastify%%</span>
+            <span class="cell-value">Fastify</span>
+          </div>
+        </div>
+        <p class="note">Todos salen del mismo comando.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 07 · CLERK CLI ═════════════════════════════════════════════ -->
+    <section class="slide" data-title="Clerk CLI">
+      <div class="slide-body">
+        <p class="basic-line">60 <b>PRINT "CLERK CLI"</b></p>
+        <h2 class="pixel-heading" data-scramble>Clerk CLI</h2>
+        <p class="lead">Toda tu cuenta de Clerk desde la terminal. Tú la manejas, y tu agente también.</p>
+        <div class="terminal fill" style="margin-top:4px;">
+          <div class="terminal-bar"><span>Instalar</span><span>bash</span></div>
+          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npm install -g clerk</span>
+
+<span class="comment"># o sin instalar nada</span>
+<span class="prompt">$ </span><span class="cmd">npx clerk</span>   <span class="comment">·</span>   <span class="prompt">$ </span><span class="cmd">bunx clerk</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 08 · CLERK INIT ════════════════════════════════════════════ -->
+    <section class="slide" data-title="clerk init">
+      <div class="slide-body">
+        <p class="basic-line">70 <b>PRINT "UN SOLO COMANDO"</b></p>
+        <div class="terminal fill">
+          <div class="terminal-bar"><span>Proyecto</span><span>~/mi-app</span></div>
+          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npx clerk init</span>
+<span class="out">✓ Next.js detectado · bun</span>
+<span class="out">✓ @clerk/nextjs instalado</span>
+<span class="out">✓ Middleware y &lt;ClerkProvider /&gt; listos</span>
+<span class="ok">✓ Keys escritas en .env.local</span></div>
+        </div>
+        <div class="flow" style="margin-top:2px;">
+          <div class="flow-step">
+            <span class="num">01</span>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <span class="cell-title">Detecta</span>
+              <span class="cell-copy">Tu framework y tu package manager.</span>
+            </div>
+            <span class="arrow" aria-hidden="true">&gt;</span>
+          </div>
+          <div class="flow-step">
+            <span class="num">02</span>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <span class="cell-title">Instala</span>
+              <span class="cell-copy">SDK, middleware y páginas de auth.</span>
+            </div>
+            <span class="arrow" aria-hidden="true">&gt;</span>
+          </div>
+          <div class="flow-step">
+            <span class="num">03</span>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <span class="cell-title">Conecta</span>
+              <span class="cell-copy">Linkea tu app y baja las keys.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 09 · COMANDOS ══════════════════════════════════════════════ -->
+    <section class="slide" data-title="Comandos">
+      <div class="slide-body">
+        <p class="basic-line">80 <b>PRINT "COMANDOS"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Los que vas a usar</h2>
+        <div class="grid-table cols-2 fill" style="margin-top:2px;">
+          <div class="cell"><span class="cell-value bright">clerk auth login</span><span class="cell-copy">Entra a tu cuenta.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk init</span><span class="cell-copy">Configura Clerk en el proyecto.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk env pull</span><span class="cell-copy">Baja las keys a .env.local.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk users</span><span class="cell-copy">Crea, lista y borra usuarios.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk doctor</span><span class="cell-copy">Revisa que tu integración esté sana.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk deploy</span><span class="cell-copy">Pasa la app a producción.</span></div>
+        </div>
+        <p class="note" style="margin-top:2px;">Y cuando compile lento: <span class="bright">clerk bird</span> — Flappy Bird en la terminal.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 10 · CLERK SKILLS ══════════════════════════════════════════ -->
+    <section class="slide" data-title="Clerk Skills">
+      <div class="slide-body">
+        <p class="basic-line">90 <b>PRINT "CLERK SKILLS"</b></p>
+        <h2 class="pixel-heading" data-scramble>Clerk Skills</h2>
+        <p class="lead">Tu agente deja de adivinar cómo se usa Clerk. Las skills le dan los patrones oficiales, escritos por quienes hacen el producto.</p>
+        <div class="terminal fill" style="margin-top:4px;">
+          <div class="terminal-bar"><span>Instalar las skills</span><span>bash</span></div>
+          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npx skills add clerk/skills</span></div>
+        </div>
+        <p class="note">Claude Code · Cursor · Windsurf · Copilot · Codex · Gemini CLI</p>
+      </div>
+    </section>
+
+    <!-- ═══ 11 · LAS SKILLS ════════════════════════════════════════════ -->
+    <section class="slide" data-title="Las skills">
+      <div class="slide-body">
+        <p class="basic-line">100 <b>PRINT "EL CATÁLOGO"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Una skill por trabajo</h2>
+        <div class="grid-table cols-3 fill" style="margin-top:2px;">
+          <div class="cell"><span class="cell-value bright">/clerk</span><span class="cell-copy">Enruta al resto.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-setup</span><span class="cell-copy">Clerk en cualquier framework.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-cli</span><span class="cell-copy">Maneja Clerk desde la terminal.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-custom-ui</span><span class="cell-copy">Flujos y estilos propios.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-orgs</span><span class="cell-copy">Multi-tenant B2B.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-billing</span><span class="cell-copy">Suscripciones y feature gating.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-webhooks</span><span class="cell-copy">Eventos en tiempo real.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-testing</span><span class="cell-copy">E2E de los flujos de auth.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-nextjs-patterns</span><span class="cell-copy">Middleware, Server Actions, caché.</span></div>
+        </div>
+        <p class="note" style="margin-top:2px;">Más las de cada plataforma: React, TanStack, Astro, Nuxt, Vue, Expo, Swift y Android.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 12 · LA DEMO ═══════════════════════════════════════════════ -->
+    <section class="slide" data-title="Los 10 minutos">
+      <div class="slide-body">
+        <p class="basic-line">110 <b>PRINT "LOS 10 MINUTOS"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>De cero a login, en vivo</h2>
+        <ul class="timeline fill" style="margin-top:2px;">
+          <li><span class="t">00:00</span><span>npx clerk init sobre un Next.js recién creado</span></li>
+          <li><span class="t">02:00</span><span>Levantar el server y ver &lt;SignIn /&gt; ya funcionando</span></li>
+          <li><span class="t">04:00</span><span>Poner &lt;UserButton /&gt; en el header</span></li>
+          <li><span class="t">06:00</span><span>Proteger /dashboard con auth() en el middleware</span></li>
+          <li><span class="t">08:00</span><span>Pedirle a la skill que agregue Organizations</span></li>
+          <li><span class="t">10:00</span><span class="bright">clerk doctor · todo verde</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══ 13 · CIERRE ════════════════════════════════════════════════ -->
+    <section class="slide" data-title="Cierre">
+      <div class="slide-body" data-center="true">
+        <h2 class="pixel-heading lg" data-scramble style="max-width: 20ch;">Deja de escribir auth y ponte a shippear</h2>
+        <p class="lead" style="text-align:center;">El siguiente paso es <span class="bright">npx clerk init</span> en el proyecto que tienes abierto ahora.</p>
+        <span class="wordmark">the next craft</span>
+        <p class="note">clerk.com/docs · jibaru.dev</p>
+        <p class="ready">READY.<span class="cursor">█</span></p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="chrome">
+  <div class="topbar">
+    <span class="deck-title">Agrega auth a tu app en menos de 10 min — Clerk × The Next Craft</span>
+    <button type="button" class="keycap" id="btn-index" aria-expanded="false" aria-controls="index">Index</button>
+  </div>
+  <div class="botbar">
+    <span class="counter">
+      <span id="counter-num">01 / 13</span>
+      <span class="progress" id="progress" aria-hidden="true"></span>
+    </span>
+    <span class="pager-keys">
+      <button type="button" class="keycap keycap-ghost" id="btn-prev" aria-label="Diapositiva anterior">←</button>
+      <button type="button" class="keycap keycap-ghost" id="btn-next" aria-label="Diapositiva siguiente">→</button>
+    </span>
+  </div>
+</div>
+
+<div class="index" id="index" hidden role="dialog" aria-modal="true" aria-label="Índice de diapositivas">
+  <div class="index-backdrop"></div>
+  <div class="index-panel">
+    <div class="index-header">
+      <span class="label" style="color:var(--bright);">Index</span>
+      <button type="button" class="keycap keycap-ghost" id="btn-index-close" aria-label="Cerrar índice">Esc</button>
+    </div>
+    <ol class="index-list" id="index-list"></ol>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var deck = document.getElementById("deck");
+  var stage = document.getElementById("stage");
+  var slides = Array.prototype.slice.call(stage.querySelectorAll(".slide"));
+  var active = 0;
+
+  /* ── Escala: el escenario 16:9 siempre entra completo en la ventana ── */
+  function fit() {
+    var pad = 56; // deja aire para el chrome fijo
+    var s = Math.min(
+      (window.innerWidth - pad) / 1280,
+      (window.innerHeight - pad) / 720
+    );
+    stage.style.setProperty("--scale", Math.max(s, 0.1));
+  }
+  fit();
+  window.addEventListener("resize", fit);
+
+  /* ── Decode binario → texto (firma del look C64) ────────────────────── */
+  function scramble(el) {
+    var real = el.getAttribute("data-text") || el.textContent;
+    el.setAttribute("data-text", real);
+    if (reduced) { el.textContent = real; return; }
+
+    // Duracion fija (~0.5s) sin importar el largo: un titular corto y uno
+    // largo tardan lo mismo, asi el ritmo no cambia entre diapositivas.
+    var FRAMES = 30;
+    var frame = 0;
+    var chars = real.split("");
+    if (el._raf) cancelAnimationFrame(el._raf);
+
+    function tick() {
+      var settled = Math.ceil((frame / FRAMES) * chars.length);
+      var out = "";
+      for (var i = 0; i < chars.length; i++) {
+        if (chars[i] === " ") { out += " "; continue; }
+        out += i < settled ? chars[i] : (Math.random() < 0.5 ? "0" : "1");
+      }
+      el.textContent = out;
+      frame++;
+      if (frame <= FRAMES) el._raf = requestAnimationFrame(tick);
+      else el.textContent = real;
+    }
+    el._raf = requestAnimationFrame(tick);
+  }
+
+  /* ── Navegación ─────────────────────────────────────────────────────── */
+  var counterNum = document.getElementById("counter-num");
+  var progress = document.getElementById("progress");
+  var btnPrev = document.getElementById("btn-prev");
+  var btnNext = document.getElementById("btn-next");
+
+  function pad2(n) { return n < 10 ? "0" + n : String(n); }
+
+  function render() {
+    slides.forEach(function (s, i) {
+      var on = i === active;
+      s.setAttribute("data-active", on ? "true" : "false");
+      s.setAttribute("aria-hidden", on ? "false" : "true");
+    });
+
+    counterNum.textContent = pad2(active + 1) + " / " + pad2(slides.length);
+
+    var bar = "";
+    for (var i = 0; i < slides.length; i++) {
+      bar += i <= active ? '<i class="on"></i>' : "<i></i>";
+    }
+    progress.innerHTML = bar;
+
+    btnPrev.disabled = active === 0;
+    btnNext.disabled = active === slides.length - 1;
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".index-btn"),
+      function (b, i) {
+        if (i === active) b.setAttribute("aria-current", "true");
+        else b.removeAttribute("aria-current");
+      }
+    );
+
+    var h = slides[active].querySelector("[data-scramble]");
+    if (h) scramble(h);
+  }
+
+  function goTo(i) {
+    active = Math.max(0, Math.min(slides.length - 1, i));
+    render();
+  }
+  function prev() { goTo(active - 1); }
+  function next() { goTo(active + 1); }
+
+  btnPrev.addEventListener("click", prev);
+  btnNext.addEventListener("click", next);
+
+  /* ── Índice ─────────────────────────────────────────────────────────── */
+  var index = document.getElementById("index");
+  var indexList = document.getElementById("index-list");
+  var btnIndex = document.getElementById("btn-index");
+
+  slides.forEach(function (s, i) {
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "index-btn";
+    b.innerHTML =
+      '<span class="index-num">' + pad2(i + 1) + "</span>" +
+      '<span>' + (s.getAttribute("data-title") || "Slide") + "</span>";
+    b.addEventListener("click", function () { goTo(i); setIndex(false); });
+    li.appendChild(b);
+    indexList.appendChild(li);
+  });
+
+  function setIndex(open) {
+    index.hidden = !open;
+    btnIndex.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) indexList.querySelector(".index-btn").focus();
+    else btnIndex.focus();
+  }
+  btnIndex.addEventListener("click", function () { setIndex(index.hidden); });
+  document.getElementById("btn-index-close").addEventListener("click", function () { setIndex(false); });
+
+  /* ── Teclado ────────────────────────────────────────────────────────── */
+  document.addEventListener("keydown", function (e) {
+    if (!index.hidden) {
+      if (e.key === "Escape" || e.key === "g" || e.key === "G") {
+        setIndex(false); e.preventDefault();
+      }
+      return;
+    }
+    switch (e.key) {
+      case "ArrowRight": case "ArrowDown": case "PageDown": case " ":
+        next(); e.preventDefault(); break;
+      case "ArrowLeft": case "ArrowUp": case "PageUp":
+        prev(); e.preventDefault(); break;
+      case "Home": goTo(0); e.preventDefault(); break;
+      case "End": goTo(slides.length - 1); e.preventDefault(); break;
+      case "g": case "G": setIndex(true); e.preventDefault(); break;
+    }
+  });
+
+  /* ── Swipe ──────────────────────────────────────────────────────────── */
+  var touch = null;
+  deck.addEventListener("touchstart", function (e) {
+    var t = e.touches[0];
+    touch = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+
+  deck.addEventListener("touchend", function (e) {
+    if (!touch) return;
+    var t = e.changedTouches[0];
+    var dx = touch.x - t.clientX;
+    var dy = touch.y - t.clientY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 56) {
+      if (dx > 0) next(); else prev();
+    }
+    touch = null;
+  }, { passive: true });
+
+  /* ── Rueda / trackpad, con cooldown ─────────────────────────────────── */
+  var wheelAcc = 0, wheelAt = 0;
+  deck.addEventListener("wheel", function (e) {
+    if (!index.hidden) return;
+    var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (!d) return;
+    wheelAcc += d;
+    var now = Date.now();
+    if (Math.abs(wheelAcc) < 80 || now - wheelAt < 450) return;
+    if (wheelAcc > 0) next(); else prev();
+    wheelAcc = 0;
+    wheelAt = now;
+  }, { passive: true });
+
+  /* ── Boot loader: solo la primera vez de la sesión ───────────────────── */
+  var boot = document.getElementById("boot");
+
+  function startDeck() {
+    deck.setAttribute("data-mounted", "true");
+    render();
+  }
+
+  function runBoot() {
+    var lines = [
+      "**** THE NEXT CRAFT 64 BASIC V2 ****",
+      "",
+      "64K RAM SYSTEM  38911 BASIC BYTES FREE",
+      "",
+      "LOADING CLERK.PRG",
+      "READY."
+    ];
+    var log = document.getElementById("boot-log");
+    var count = document.getElementById("boot-count");
+    var bar = document.getElementById("boot-bar");
+    log.textContent = lines.join("\n");
+
+    var n = 0;
+    var timer = setInterval(function () {
+      n += Math.floor(Math.random() * 9) + 4;
+      if (n >= 100) n = 100;
+      count.textContent = ("00" + n).slice(-3);
+      var filled = Math.round(n / 5);
+      bar.textContent =
+        new Array(filled + 1).join("█") +
+        new Array(20 - filled + 1).join("░");
+      if (n === 100) {
+        clearInterval(timer);
+        setTimeout(function () {
+          boot.setAttribute("data-done", "true");
+          startDeck();
+          setTimeout(function () { boot.hidden = true; }, 700);
+        }, 260);
+      }
+    }, 70);
+  }
+
+  var booted = false;
+  try { booted = sessionStorage.getItem("tnc-clerk-booted") === "1"; } catch (err) { booted = false; }
+
+  if (reduced || booted) {
+    boot.hidden = true;
+    startDeck();
+  } else {
+    try { sessionStorage.setItem("tnc-clerk-booted", "1"); } catch (err) {}
+    render();
+    runBoot();
+  }
+
+  /* Saltar el boot con cualquier tecla o clic */
+  function skipBoot() {
+    if (boot.hidden || boot.getAttribute("data-done") === "true") return;
+    boot.setAttribute("data-done", "true");
+    startDeck();
+    setTimeout(function () { boot.hidden = true; }, 700);
+  }
+  document.addEventListener("keydown", skipBoot, { once: true });
+  boot.addEventListener("click", skipBoot);
+})();
+</script>

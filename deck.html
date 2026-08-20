@@ -1,0 +1,1342 @@
+<title>Auth en 10 Minutos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Borel&family=IBM+Plex+Mono:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap">
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   THE NEXT CRAFT × CLERK — deck
+   Sistema de diseño heredado de crafter-station/the-next-craft (DESIGN.md):
+   "COMMODORE 64 MONO". B&N estricto, un solo tema (es un monitor encendido).
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  /* Paleta B&N vintage — negro cálido tipo Apple '99 */
+  --void: #1a1a17;
+  --screen: #1a1a17;
+  --screen-dim: #161613;
+  --line: #8c8a82;
+  --bright: #e9e7de;
+  --text: #f2f0e9;
+  --text-dim: #b8b6ab;
+  --bone: #e6e3d8;
+  --key-shadow: #8c8a82;
+  --border: rgb(140 138 130 / 45%);
+
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-pixel: "Silkscreen", "IBM Plex Mono", monospace;
+  --font-script: "Borel", "Brush Script MT", cursive;
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* Coordenadas del escenario 16:9 — todo se mide contra esto */
+  --stage-w: 1280px;
+  --stage-h: 720px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--bright); color: var(--void); }
+
+:focus-visible {
+  outline: 2px solid var(--bright);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ─── Escenario: 1280×720 escalado a la ventana (letterbox) ───────────── */
+
+.deck {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--void);
+}
+
+.stage-scaler {
+  width: var(--stage-w);
+  height: var(--stage-h);
+  transform: scale(var(--scale, 1));
+  transform-origin: center center;
+  position: relative;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  background: var(--screen);
+  padding: 64px 76px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.deck[data-mounted="true"] .slide {
+  transition:
+    opacity 220ms var(--ease-out-strong),
+    transform 220ms var(--ease-out-strong);
+}
+
+.slide[data-active="true"] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* Cuadrícula CRT sutil de fondo */
+.slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(140 138 130 / 7%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(140 138 130 / 7%) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+}
+
+/* Scanlines: textura de pantalla encendida */
+.slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 6%) 0, rgb(0 0 0 / 6%) 1px,
+    transparent 1px, transparent 4px
+  );
+}
+
+.slide-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  flex: 1;
+  min-height: 0;
+}
+
+.slide-body[data-center="true"] {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* El encabezado queda anclado arriba (no salta entre diapositivas) y es el
+   bloque principal el que estira para ocupar el alto restante. */
+.fill { flex: 1 1 auto; min-height: 0; }
+.grid-table.fill { grid-auto-rows: 1fr; }
+.grid-table.fill .cell { justify-content: center; }
+.contrast.fill .cell { justify-content: flex-start; }
+.timeline.fill li { flex: 1; align-items: center; }
+.terminal.fill { display: flex; flex-direction: column; }
+.terminal.fill .terminal-body { flex: 1; }
+.stat-row.fill { align-items: center; }
+
+/* ─── Tipografía ──────────────────────────────────────────────────────── */
+
+.basic-line {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0;
+}
+.basic-line b { color: var(--bright); font-weight: 600; }
+
+.pixel-heading {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  text-wrap: balance;
+  margin: 0;
+  font-size: 44px;
+}
+
+.pixel-heading.sm { font-size: 36px; }
+.pixel-heading.lg { font-size: 58px; }
+
+.lead {
+  font-family: var(--font-mono);
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+  margin: 0;
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+
+.dim { color: var(--text-dim); }
+.bright { color: var(--bright); }
+
+.note {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.wordmark {
+  font-family: var(--font-script);
+  color: var(--bright);
+  line-height: 1;
+  font-size: 46px;
+  padding-top: 10px;
+  display: inline-block;
+}
+
+.ready {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--bright);
+  margin: 0;
+}
+
+.cursor { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ─── Retícula compartida de 1px (tablas fusionadas) ──────────────────── */
+
+.grid-table {
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: var(--screen-dim);
+  display: grid;
+}
+.cell {
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.cell-title {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 20px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--text);
+}
+.cell-copy {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.cell-value {
+  font-family: var(--font-mono);
+  font-size: 19px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* Celda de framework: marca arriba, nombre debajo */
+.cell.fw { gap: 12px; }
+.fw-mark {
+  display: block;
+  width: 30px;
+  height: 30px;
+  color: var(--text);
+}
+.fw-mark svg { display: block; width: 100%; height: 100%; }
+
+/* ─── Terminal: el motivo que se repite ───────────────────────────────── */
+
+.terminal {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.terminal-body {
+  padding: 20px 22px;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.terminal-body.lg { font-size: 24px; }
+
+.terminal-body .prompt { color: var(--line); user-select: none; }
+.terminal-body .cmd { color: var(--bright); font-weight: 600; }
+.terminal-body .comment { color: var(--text-dim); }
+.terminal-body .out { color: var(--text-dim); }
+.terminal-body .ok { color: var(--text); }
+
+/* Barra-enlace: descripcion a la izquierda, destino a la derecha */
+.linkbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: border-color 150ms ease-out, color 150ms ease-out;
+}
+.linkbar:hover { border-color: var(--bright); color: var(--text); }
+.linkbar-url {
+  flex-shrink: 0;
+  color: var(--bright);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ─── Chips ───────────────────────────────────────────────────────────── */
+
+.chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  padding: 9px 14px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.chip.muted { color: var(--text-dim); }
+
+/* ─── Contraste: antes / después ──────────────────────────────────────── */
+
+.contrast { display: grid; grid-template-columns: 1fr 1fr; }
+.contrast-col { gap: 14px; }
+.contrast-col .label { letter-spacing: 0.14em; }
+.contrast-col[data-strong="true"] .label { color: var(--bright); }
+.contrast-items { display: grid; gap: 8px; }
+.contrast-item {
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.contrast-item.literal {
+  text-transform: none;
+  font-size: 22px;
+  letter-spacing: 0;
+  color: var(--bright);
+}
+
+.contrast-col[data-strong="true"] .contrast-item {
+  color: var(--text);
+  background: var(--screen);
+}
+
+/* ─── FlowMap: pasos encadenados ──────────────────────────────────────── */
+
+.flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.flow-step {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--screen-dim);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 172px;
+}
+.flow-step .num {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--bright);
+  font-variant-numeric: tabular-nums;
+}
+.flow-step .arrow {
+  position: absolute;
+  right: -13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bright);
+  font-family: var(--font-mono);
+  z-index: 2;
+}
+
+/* ─── Timeline ────────────────────────────────────────────────────────── */
+
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.timeline li {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 11px 0 11px 18px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--text);
+}
+.timeline li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px; height: 6px;
+  background: var(--bright);
+}
+.timeline .t {
+  flex-shrink: 0;
+  width: 58px;
+  color: var(--bright);
+  font-variant-numeric: tabular-nums;
+  font-size: 17px;
+}
+
+/* ─── Stats ───────────────────────────────────────────────────────────── */
+
+.stat-row { display: flex; flex-wrap: wrap; gap: 52px; }
+.stat { display: flex; flex-direction: column; gap: 6px; }
+.stat .v {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 62px;
+  line-height: 1;
+  color: var(--text);
+  white-space: nowrap;
+}
+.stat .l {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ─── Logos ───────────────────────────────────────────────────────────── */
+
+.logo { display: block; color: var(--text); }
+.logo svg { display: block; width: 100%; height: 100%; }
+
+.logo-lockup {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.logo-lockup .x {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--line);
+}
+
+/* ─── Keycaps ─────────────────────────────────────────────────────────── */
+
+.keycap {
+  background: var(--bone);
+  color: var(--void);
+  border: 1px solid var(--key-shadow);
+  border-radius: 6px;
+  box-shadow: 0 2px 0 var(--key-shadow);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  cursor: pointer;
+  transform: translateY(0);
+}
+.keycap:hover { background: #f4f2ea; }
+.keycap:active { transform: translateY(2px); box-shadow: 0 0 0 var(--key-shadow); }
+.keycap:disabled { opacity: 0.35; cursor: default; }
+.keycap:disabled:active { transform: none; box-shadow: 0 2px 0 var(--key-shadow); }
+
+.keycap-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 0 var(--line);
+}
+.keycap-ghost:hover { background: var(--screen-dim); }
+.keycap-ghost:active { box-shadow: 0 0 0 var(--line); }
+
+/* ─── Chrome del pager ────────────────────────────────────────────────── */
+
+.chrome {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.chrome > * { pointer-events: auto; }
+
+.topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+}
+.deck-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  max-width: 60vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.botbar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+}
+
+.counter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.progress {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.progress i {
+  width: 12px;
+  height: 4px;
+  background: var(--line);
+  opacity: 0.4;
+}
+.progress i.on { background: var(--bright); opacity: 1; }
+
+.pager-keys { display: flex; gap: 8px; }
+
+/* ─── Índice ──────────────────────────────────────────────────────────── */
+
+.index {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.index[hidden] { display: none; }
+.index-backdrop { position: absolute; inset: 0; background: rgb(26 26 23 / 94%); }
+.index-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen-dim);
+  border: 1px solid var(--line);
+}
+.index-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.index-list { list-style: none; margin: 0; padding: 12px; overflow-y: auto; }
+.index-btn {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: left;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out;
+}
+.index-btn:hover, .index-btn:focus-visible {
+  color: var(--text);
+  background: var(--void);
+  border-color: var(--line);
+}
+.index-btn[aria-current="true"] {
+  color: var(--bright);
+  background: var(--void);
+  border-color: var(--bright);
+}
+.index-num {
+  flex-shrink: 0;
+  width: 26px;
+  font-variant-numeric: tabular-nums;
+  color: var(--line);
+}
+.index-btn[aria-current="true"] .index-num { color: var(--bright); }
+
+/* ─── Boot loader ─────────────────────────────────────────────────────── */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--void);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 clamp(24px, 8vw, 120px);
+  gap: 22px;
+  transition: transform 620ms var(--ease-in-out-strong);
+}
+.boot[data-done="true"] { transform: translateY(-100%); }
+.boot[hidden] { display: none; }
+.boot-log {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--text-dim);
+  white-space: pre;
+}
+.boot-count {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: clamp(40px, 9vw, 88px);
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.boot-bar {
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 2.2vw, 20px);
+  letter-spacing: 0.06em;
+  color: var(--bright);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ─── Movimiento reducido ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .deck[data-mounted="true"] .slide { transition: none; transform: none; }
+  .cursor { animation: none; }
+  .boot { transition: none; }
+}
+
+/* ─── Impresión → PDF 16:9 ────────────────────────────────────────────── */
+
+@page { size: 1280px 720px; margin: 0; }
+
+@media print {
+  body { overflow: visible; background: #fff; }
+  .chrome, .index, .boot { display: none !important; }
+  .deck { position: static; display: block; }
+  .stage-scaler { transform: none; width: 1280px; height: auto; }
+  .slide {
+    position: relative;
+    inset: auto;
+    width: 1280px;
+    height: 720px;
+    opacity: 1;
+    transform: none;
+    page-break-after: always;
+    break-after: page;
+  }
+  .slide::after { display: none; }
+}
+</style>
+
+<a class="sr-only" href="#slide-1">Saltar controles — ir a la primera diapositiva</a>
+
+<div class="boot" id="boot" aria-hidden="true">
+  <div class="boot-log" id="boot-log"></div>
+  <div class="boot-count" id="boot-count">000</div>
+  <div class="boot-bar" id="boot-bar"></div>
+</div>
+
+<div class="deck" id="deck">
+  <div class="stage-scaler" id="stage">
+
+    <!-- ═══ 01 · PORTADA ═══════════════════════════════════════════════ -->
+    <section class="slide" id="slide-1" data-title="Portada">
+      <div class="slide-body" data-center="true">
+        <div class="logo-lockup" style="margin-bottom: 4px;">
+          <span class="logo" style="width:118px;height:34px;" role="img" aria-label="Clerk"><svg aria-hidden="true" focusable="false" viewBox="0 0 441 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M166.971 40.9172C178.576 40.9172 190.795 45.5232 198.363 54.4358C198.413 54.4943 198.406 54.5818 198.348 54.6321L186.955 64.4905C186.897 64.5411 186.808 64.5348 186.757 64.4768C184.442 61.8452 181.568 59.7383 178.335 58.303C175.059 56.8492 171.495 56.1207 167.898 56.1702C154.488 56.1702 145.548 65.3619 145.548 78.8C145.548 85.5131 147.771 91.145 151.635 95.0891C153.762 97.1729 156.302 98.8083 159.099 99.8948C161.896 100.981 164.891 101.496 167.898 101.406C171.46 101.438 174.992 100.759 178.276 99.4104C181.52 98.0791 184.457 96.1229 186.911 93.6584C186.963 93.6061 187.047 93.6025 187.103 93.6506L198.748 103.698C198.808 103.749 198.814 103.839 198.761 103.898C192.264 111.073 180.762 116.764 166.364 116.764C155.225 116.764 145.571 112.854 138.795 106.199C132.019 99.5445 128 90.1203 128 78.928C128 56.2988 144.169 40.9174 166.971 40.9172Z" fill="currentColor"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M272.297 40.9241C294.364 40.9243 308.634 56.4443 308.634 77.8733C308.603 80.0994 308.45 82.3226 308.177 84.5325C308.168 84.6028 308.108 84.6555 308.037 84.6555H253.776C253.687 84.6555 253.62 84.7398 253.64 84.8274C255.961 95.114 263.91 101.384 274.9 101.384C278.479 101.459 282.026 100.724 285.269 99.2327C288.467 97.7617 291.284 95.5949 293.505 92.8977C293.555 92.8373 293.644 92.829 293.704 92.8792L294.151 93.2522L305.314 102.971C305.371 103.02 305.379 103.107 305.332 103.165C299.016 110.999 288.524 116.764 273.977 116.764C252.205 116.764 235.781 101.687 235.781 78.7805C235.781 67.5426 239.651 58.1184 246.1 51.4641C249.503 48.0425 253.584 45.3422 258.089 43.5295C262.594 41.7168 267.43 40.83 272.297 40.9241ZM273.184 56.1526C270.429 56.0653 267.689 56.5639 265.148 57.6135C262.608 58.6639 260.328 60.2418 258.465 62.2375C256.265 64.7317 254.709 67.7085 253.927 70.9172C253.905 71.0052 253.972 71.09 254.062 71.0901H291.098C291.188 71.0901 291.255 71.0045 291.233 70.9163C289.077 62.1122 282.94 56.1526 273.184 56.1526Z" fill="currentColor"/>
+<path d="M225.661 11.9758C225.739 11.9758 225.802 12.0388 225.802 12.1165V115.625C225.802 115.703 225.739 115.766 225.661 115.766H208.977C208.899 115.766 208.836 115.703 208.836 115.625V12.1165C208.836 12.0389 208.899 11.976 208.977 11.9758H225.661Z" fill="currentColor"/>
+<path d="M361.385 40.9192C361.463 40.9183 361.527 40.9816 361.527 41.0598V59.6116C361.527 59.6933 361.457 59.7582 361.376 59.7522C359.432 59.6052 357.496 59.4612 356.304 59.4612C343.246 59.4613 335.579 68.6515 335.579 80.7151V115.625C335.579 115.703 335.516 115.766 335.438 115.766H318.755C318.677 115.766 318.614 115.703 318.614 115.625V42.1047C318.614 42.0272 318.677 41.9641 318.755 41.9641H335.438C335.516 41.9641 335.579 42.0272 335.579 42.1047V53.0413C335.579 53.098 335.626 53.1438 335.683 53.1438C335.715 53.1438 335.746 53.1287 335.766 53.1028C341.617 45.2882 350.254 40.9407 359.379 40.9407L361.385 40.9192Z" fill="currentColor"/>
+<path d="M388.332 11.9758C388.41 11.9759 388.473 12.0388 388.473 12.1165V75.2815C388.473 75.4096 388.63 75.4707 388.717 75.3762L419.408 41.9211C419.435 41.8922 419.472 41.8752 419.512 41.8752H439.575C439.697 41.8752 439.762 42.0202 439.68 42.1106L412.928 71.6262C412.886 71.6727 412.879 71.7419 412.912 71.7952L440.031 115.551C440.089 115.645 440.022 115.766 439.912 115.766H420.879C420.83 115.766 420.784 115.741 420.759 115.699L401.525 84.7874C401.5 84.7463 401.455 84.7209 401.406 84.7209H401.226C401.187 84.7209 401.149 84.7373 401.122 84.7659L388.51 98.3167C388.486 98.3426 388.473 98.3769 388.473 98.4124V115.625C388.473 115.703 388.41 115.766 388.332 115.766H371.647C371.57 115.766 371.507 115.703 371.507 115.625V12.1165C371.507 12.0388 371.57 11.9759 371.647 11.9758H388.332Z" fill="currentColor"/>
+<path d="M99.5716 10.788C101.571 12.1272 101.742 14.9444 100.04 16.646L85.4244 31.2618C84.1035 32.5828 82.0542 32.7914 80.3915 31.9397C75.4752 29.421 69.9035 28 64 28C44.1177 28 28 44.1177 28 64C28 69.9035 29.421 75.4752 31.9397 80.3915C32.7914 82.0542 32.5828 84.1035 31.2618 85.4244L16.646 100.04C14.9444 101.742 12.1272 101.571 10.788 99.5716C3.97411 89.3989 0 77.1635 0 64C0 28.6538 28.6538 0 64 0C77.1635 0 89.3989 3.97411 99.5716 10.788Z" fill="currentColor" fill-opacity="0.4"/>
+<path d="M84 64C84 75.0457 75.0457 84 64 84C52.9543 84 44 75.0457 44 64C44 52.9543 52.9543 44 64 44C75.0457 44 84 52.9543 84 64Z" fill="currentColor"/>
+<path d="M100.04 111.354C101.742 113.056 101.571 115.873 99.5717 117.212C89.3989 124.026 77.1636 128 64 128C50.8364 128 38.6011 124.026 28.4283 117.212C26.4289 115.873 26.2581 113.056 27.9597 111.354L42.5755 96.7382C43.8965 95.4172 45.9457 95.2085 47.6084 96.0603C52.5248 98.579 58.0964 100 64 100C69.9036 100 75.4753 98.579 80.3916 96.0603C82.0543 95.2085 84.1036 95.4172 85.4245 96.7382L100.04 111.354Z" fill="currentColor"/>
+</svg></span>
+          <span class="x">×</span>
+          <span class="logo" style="width:168px;height:23px;" role="img" aria-label="Crafter Station"><svg aria-hidden="true" focusable="false" viewBox="0 0 707 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M34.7718 13.6653C32.7175 12.2339 29.2082 10.55 26.8971 9.87636C21.6759 8.27657 17.5551 9.17712 14.8283 10.129C9.52151 11.9813 6.18334 14.4231 3.18755 18.8857C-1.52013 25.79 -0.835381 36.9885 4.89943 43.3035C6.18334 44.8191 6.86809 44.5665 11.8326 40.9459C12.0037 40.7775 11.319 39.6829 10.2919 38.4199C7.98082 35.5571 6.61131 30.3368 7.29606 27.3898C9.52151 18.1279 20.9055 13.1601 28.2666 18.2121C29.8929 19.3067 35.0286 23.8534 39.6506 28.316C46.5838 34.8835 48.638 36.3991 50.3499 36.2307C52.0618 36.0623 52.6609 35.4729 52.8321 33.6206C53.0889 31.5998 52.3186 30.421 48.3812 26.8846C45.7278 24.4428 43.588 22.2537 43.588 21.8327C43.588 21.4959 45.3854 20.0645 47.6109 18.7173C61.9907 9.70797 77.4832 27.6424 65.5001 39.4303C63.9594 40.9459 61.2204 42.5457 59.4229 43.0509C57.3686 43.5561 47.8677 43.9771 36.0557 43.9771C13.9724 43.9771 12.7741 44.2297 6.95368 49.3658C-0.493008 56.0176 -2.20489 67.3845 3.01635 75.636C9.77829 86.4135 24.3293 89.1079 34.6006 81.4458L38.3667 78.583L42.732 81.4458C49.8363 86.1609 55.5712 87.0871 62.5043 84.8137C76.3705 80.1828 81.5062 62.8377 72.5188 51.2182C71.4917 49.9552 70.9781 49.871 69.6086 50.5446C65.4145 52.9022 65.5001 52.7338 67.9823 57.7858C69.8654 61.6589 70.2077 63.1745 69.7798 66.1215C68.5815 73.531 62.9322 78.4988 55.7423 78.4988C50.1787 78.4988 48.3812 77.4042 38.11 67.5529C32.7175 62.5009 27.7531 58.291 27.0683 58.291C25.7844 58.291 23.0454 60.9011 23.0454 62.1641C23.0454 62.5009 25.3564 65.1953 28.2666 68.0581L33.4879 73.1942L30.4065 75.5518C19.536 83.7191 4.04349 73.952 7.63844 61.1537C8.75116 57.2806 12.6885 52.9864 16.4546 51.6392C17.9097 51.0498 26.8971 50.713 39.0515 50.713C61.3915 50.713 64.045 50.292 69.1806 45.9137C84.502 33.1154 75.6002 9.03437 55.5711 9.11857C49.7507 9.11857 46.5838 10.2974 41.1913 14.2547L38.4523 16.2755L34.7718 13.6653Z" fill="currentColor"/>
+<path d="M142.046 75.184C137.211 75.184 132.895 74.0987 129.096 71.928C125.347 69.7573 122.387 66.6493 120.216 62.604C118.095 58.5093 117.034 53.576 117.034 47.804C117.034 42.2293 118.07 37.3947 120.142 33.3C122.214 29.156 125.125 25.9493 128.874 23.68C132.673 21.4107 137.137 20.276 142.268 20.276C149.323 20.276 154.799 22.0027 158.696 25.456C162.643 28.9093 165.183 33.8673 166.318 40.33L152.924 40.848C152.381 37.6907 151.197 35.224 149.372 33.448C147.547 31.672 145.179 30.784 142.268 30.784C138.371 30.784 135.386 32.3627 133.314 35.52C131.291 38.628 130.28 42.7227 130.28 47.804C130.28 52.984 131.341 57.1033 133.462 60.162C135.583 63.1713 138.494 64.676 142.194 64.676C145.401 64.676 147.867 63.7387 149.594 61.864C151.37 59.9893 152.505 57.35 152.998 53.946L166.466 54.464C165.331 61.0747 162.717 66.1807 158.622 69.782C154.577 73.3833 149.051 75.184 142.046 75.184ZM175.15 74V34.188H187.36L187.656 42.328C188.445 39.4667 189.605 37.3947 191.134 36.112C192.713 34.8293 194.711 34.188 197.128 34.188H200.606V44.474H197.054C193.897 44.474 191.578 45.0413 190.098 46.176C188.618 47.3107 187.878 49.3087 187.878 52.17V74H175.15ZM219.787 74.888C215.594 74.888 212.165 73.9507 209.501 72.076C206.886 70.152 205.579 67.4633 205.579 64.01C205.579 60.5073 206.714 57.794 208.983 55.87C211.252 53.946 214.558 52.54 218.899 51.652L231.257 49.136C231.257 44.4 229.308 42.032 225.411 42.032C221.711 42.032 219.565 43.7833 218.973 47.286L206.245 46.842C207.034 42.254 209.082 38.85 212.387 36.63C215.692 34.41 220.034 33.3 225.411 33.3C237.794 33.3 243.985 38.8993 243.985 50.098V62.678C243.985 63.9113 244.182 64.7253 244.577 65.12C245.021 65.5147 245.613 65.712 246.353 65.712H247.315V74C246.92 74.148 246.279 74.2713 245.391 74.37C244.503 74.4687 243.64 74.518 242.801 74.518C241.518 74.518 240.236 74.3453 238.953 74C237.67 73.6053 236.56 72.9393 235.623 72.002C234.686 71.0153 234.044 69.6587 233.699 67.932C232.663 70.0533 230.986 71.7553 228.667 73.038C226.348 74.2713 223.388 74.888 219.787 74.888ZM223.117 66.6C225.485 66.6 227.434 65.8847 228.963 64.454C230.492 63.0233 231.257 60.9513 231.257 58.238V56.61L223.561 58.386C220.305 59.0767 218.677 60.5567 218.677 62.826C218.677 65.342 220.157 66.6 223.117 66.6ZM257.38 74V45.436H251.46V36.186H257.38V34.632C257.38 30.3893 258.514 27.1333 260.784 24.864C263.053 22.5947 266.58 21.46 271.366 21.46H280.542V30.636H274.474C272.895 30.636 271.785 31.0307 271.144 31.82C270.502 32.56 270.182 33.6947 270.182 35.224V36.186H280.024V45.436H270.182V74H257.38ZM304.847 74C300.555 74 297.398 73.0133 295.375 71.04C293.402 69.0173 292.415 65.8107 292.415 61.42V43.364H285.829V34.188H292.415V24.864H305.143V34.188H315.577V43.364H305.143V59.792C305.143 61.716 305.538 63.048 306.327 63.788C307.166 64.4787 308.424 64.824 310.101 64.824H315.577V74H304.847ZM341.863 74.888C337.719 74.888 334.093 74.0247 330.985 72.298C327.877 70.5713 325.46 68.154 323.733 65.046C322.007 61.938 321.143 58.2873 321.143 54.094C321.143 49.95 322.007 46.324 323.733 43.216C325.46 40.0587 327.853 37.6167 330.911 35.89C334.019 34.1633 337.645 33.3 341.789 33.3C345.933 33.3 349.51 34.188 352.519 35.964C355.529 37.6907 357.847 40.182 359.475 43.438C361.153 46.694 361.991 50.5667 361.991 55.056V57.424H334.315C334.414 60.1867 335.154 62.2587 336.535 63.64C337.966 64.972 339.816 65.638 342.085 65.638C343.763 65.638 345.169 65.3173 346.303 64.676C347.438 63.9853 348.252 62.8753 348.745 61.346L361.473 62.086C360.339 66.23 358.02 69.412 354.517 71.632C351.064 73.8027 346.846 74.888 341.863 74.888ZM334.315 50.172H349.115C349.017 47.5573 348.301 45.6087 346.969 44.326C345.637 42.994 343.911 42.328 341.789 42.328C339.717 42.328 338.015 43.0187 336.683 44.4C335.351 45.7813 334.562 47.7053 334.315 50.172ZM370.527 74V34.188H382.737L383.033 42.328C383.823 39.4667 384.982 37.3947 386.511 36.112C388.09 34.8293 390.088 34.188 392.505 34.188H395.983V44.474H392.431C389.274 44.474 386.955 45.0413 385.475 46.176C383.995 47.3107 383.255 49.3087 383.255 52.17V74H370.527ZM446.091 75.184C439.086 75.184 433.61 73.5067 429.663 70.152C425.717 66.748 423.546 62.2093 423.151 56.536L436.027 55.944C436.422 58.8053 437.433 61.0007 439.061 62.53C440.739 64.0593 443.131 64.824 446.239 64.824C448.755 64.824 450.679 64.38 452.011 63.492C453.393 62.604 454.083 61.272 454.083 59.496C454.083 58.4107 453.812 57.4733 453.269 56.684C452.776 55.8453 451.765 55.1053 450.235 54.464C448.755 53.7733 446.511 53.1073 443.501 52.466C438.864 51.4793 435.115 50.3447 432.253 49.062C429.441 47.73 427.369 46.0773 426.037 44.104C424.755 42.0813 424.113 39.516 424.113 36.408C424.113 33.2013 424.927 30.3893 426.555 27.972C428.183 25.5547 430.527 23.68 433.585 22.348C436.644 20.9667 440.295 20.276 444.537 20.276C449.076 20.276 452.875 21.0653 455.933 22.644C459.041 24.1733 461.434 26.2947 463.111 29.008C464.838 31.7213 465.899 34.854 466.293 38.406L453.565 38.998C453.319 36.4327 452.406 34.41 450.827 32.93C449.249 31.4007 447.103 30.636 444.389 30.636C442.12 30.636 440.319 31.1293 438.987 32.116C437.705 33.1027 437.063 34.3853 437.063 35.964C437.063 37.7893 437.754 39.1707 439.135 40.108C440.566 41.0453 443.205 41.884 447.053 42.624C452.085 43.5613 456.057 44.7947 458.967 46.324C461.878 47.804 463.95 49.6047 465.183 51.726C466.417 53.798 467.033 56.1907 467.033 58.904C467.033 63.936 465.159 67.9073 461.409 70.818C457.709 73.7287 452.603 75.184 446.091 75.184ZM493.142 74C488.85 74 485.693 73.0133 483.67 71.04C481.697 69.0173 480.71 65.8107 480.71 61.42V43.364H474.124V34.188H480.71V24.864H493.438V34.188H503.872V43.364H493.438V59.792C493.438 61.716 493.833 63.048 494.622 63.788C495.461 64.4787 496.719 64.824 498.396 64.824H503.872V74H493.142ZM524.08 74.888C519.887 74.888 516.458 73.9507 513.794 72.076C511.18 70.152 509.872 67.4633 509.872 64.01C509.872 60.5073 511.007 57.794 513.276 55.87C515.546 53.946 518.851 52.54 523.192 51.652L535.55 49.136C535.55 44.4 533.602 42.032 529.704 42.032C526.004 42.032 523.858 43.7833 523.266 47.286L510.538 46.842C511.328 42.254 513.375 38.85 516.68 36.63C519.986 34.41 524.327 33.3 529.704 33.3C542.087 33.3 548.278 38.8993 548.278 50.098V62.678C548.278 63.9113 548.476 64.7253 548.87 65.12C549.314 65.5147 549.906 65.712 550.646 65.712H551.608V74C551.214 74.148 550.572 74.2713 549.684 74.37C548.796 74.4687 547.933 74.518 547.094 74.518C545.812 74.518 544.529 74.3453 543.246 74C541.964 73.6053 540.854 72.9393 539.916 72.002C538.979 71.0153 538.338 69.6587 537.992 67.932C536.956 70.0533 535.279 71.7553 532.96 73.038C530.642 74.2713 527.682 74.888 524.08 74.888ZM527.41 66.6C529.778 66.6 531.727 65.8847 533.256 64.454C534.786 63.0233 535.55 60.9513 535.55 58.238V56.61L527.854 58.386C524.598 59.0767 522.97 60.5567 522.97 62.826C522.97 65.342 524.45 66.6 527.41 66.6ZM574.256 74C569.964 74 566.807 73.0133 564.784 71.04C562.811 69.0173 561.824 65.8107 561.824 61.42V43.364H555.238V34.188H561.824V24.864H574.552V34.188H584.986V43.364H574.552V59.792C574.552 61.716 574.947 63.048 575.736 63.788C576.575 64.4787 577.833 64.824 579.51 64.824H584.986V74H574.256ZM593.201 74V34.188H605.929V74H593.201ZM592.979 29.748V20.276H606.151V29.748H592.979ZM635.394 74.888C631.151 74.888 627.476 74.0247 624.368 72.298C621.26 70.5713 618.818 68.154 617.042 65.046C615.315 61.938 614.452 58.2873 614.452 54.094C614.452 49.9007 615.315 46.25 617.042 43.142C618.818 40.034 621.26 37.6167 624.368 35.89C627.476 34.1633 631.151 33.3 635.394 33.3C639.587 33.3 643.238 34.1633 646.346 35.89C649.454 37.6167 651.871 40.034 653.598 43.142C655.374 46.25 656.262 49.9007 656.262 54.094C656.262 58.2873 655.374 61.938 653.598 65.046C651.871 68.154 649.454 70.5713 646.346 72.298C643.238 74.0247 639.587 74.888 635.394 74.888ZM635.394 65.49C637.861 65.49 639.76 64.5033 641.092 62.53C642.473 60.5567 643.164 57.7447 643.164 54.094C643.164 50.4927 642.473 47.7053 641.092 45.732C639.76 43.7093 637.861 42.698 635.394 42.698C632.878 42.698 630.929 43.7093 629.548 45.732C628.216 47.7053 627.55 50.4927 627.55 54.094C627.55 57.7447 628.216 60.5567 629.548 62.53C630.929 64.5033 632.878 65.49 635.394 65.49ZM664.776 74V34.188H676.172L676.468 40.552C677.553 37.9373 679.107 36.0873 681.13 35.002C683.202 33.8673 685.52 33.3 688.086 33.3C692.328 33.3 695.658 34.632 698.076 37.296C700.493 39.96 701.702 43.66 701.702 48.396V74H688.974V52.762C688.974 49.7033 688.604 47.36 687.864 45.732C687.173 44.0547 685.767 43.216 683.646 43.216C681.574 43.216 680.02 44.0547 678.984 45.732C677.997 47.36 677.504 49.7033 677.504 52.762V74H664.776Z" fill="currentColor"/>
+</svg></span>
+        </div>
+        <h1 class="pixel-heading lg" data-scramble style="max-width: 21ch;">Agrega auth a tu app en menos de 10 min</h1>
+        <span class="wordmark">the next craft</span>
+        <p class="note">Ignacio Rueda · <span class="bright">@jibaru</span> · Software Engineer @ Clerk</p>
+        <p class="ready">READY.<span class="cursor">█</span></p>
+      </div>
+    </section>
+
+    <!-- ═══ 02 · QUIÉN SOY ═════════════════════════════════════════════ -->
+    <section class="slide" data-title="Quién soy">
+      <div class="slide-body">
+        <p class="basic-line">10 <b>PRINT "QUIÉN SOY"</b></p>
+        <h2 class="pixel-heading" data-scramble>Ignacio Rueda</h2>
+        <p class="lead">Le meto código a <span class="bright">Clerk</span> desde Lima. Construyo con <span class="bright">Crafter Station</span> y grabo lo que aprendo.</p>
+        <div class="grid-table cols-4 fill" style="margin-top:4px;">
+          <div class="cell"><span class="label">Rol</span><span class="cell-value">Software Engineer<br>@ Clerk</span></div>
+          <div class="cell"><span class="label">Comunidad</span><span class="cell-value">Crafter Station</span></div>
+          <div class="cell"><span class="label">Base</span><span class="cell-value">Lima, Perú</span></div>
+          <div class="cell"><span class="label">Web</span><span class="cell-value bright">jibaru.dev</span></div>
+        </div>
+        <div class="chips" style="margin-top:2px;">
+          <span class="chip muted">X · @IgnacioRuedaB</span>
+          <span class="chip muted">GitHub · jibaru</span>
+          <span class="chip muted">YouTube · @ignacio-rueda</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 03 · EL PROBLEMA ═══════════════════════════════════════════ -->
+    <section class="slide" data-title="Auth a mano">
+      <div class="slide-body">
+        <p class="basic-line">20 <b>PRINT "EL PROBLEMA"</b></p>
+        <h2 class="pixel-heading" data-scramble>Auth a mano son semanas</h2>
+        <div class="contrast grid-table cols-2 fill" style="margin-top:2px;">
+          <div class="cell contrast-col">
+            <span class="label">A mano</span>
+            <div class="contrast-items">
+              <div class="contrast-item">Hash de passwords</div>
+              <div class="contrast-item">Sesiones y refresh tokens</div>
+              <div class="contrast-item">OAuth, proveedor por proveedor</div>
+              <div class="contrast-item">MFA, reset, magic links</div>
+              <div class="contrast-item">Panel para ver usuarios</div>
+            </div>
+          </div>
+          <div class="cell contrast-col" data-strong="true">
+            <span class="label">Con Clerk</span>
+            <div class="contrast-items">
+              <div class="contrast-item literal">npx clerk init</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 04 · QUÉ ES CLERK ══════════════════════════════════════════ -->
+    <section class="slide" data-title="Qué es Clerk">
+      <div class="slide-body">
+        <p class="basic-line">30 <b>PRINT "QUÉ ES CLERK"</b></p>
+        <span class="logo" style="width:210px;height:61px;margin:2px 0;" role="img" aria-label="Clerk"><svg aria-hidden="true" focusable="false" viewBox="0 0 441 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M166.971 40.9172C178.576 40.9172 190.795 45.5232 198.363 54.4358C198.413 54.4943 198.406 54.5818 198.348 54.6321L186.955 64.4905C186.897 64.5411 186.808 64.5348 186.757 64.4768C184.442 61.8452 181.568 59.7383 178.335 58.303C175.059 56.8492 171.495 56.1207 167.898 56.1702C154.488 56.1702 145.548 65.3619 145.548 78.8C145.548 85.5131 147.771 91.145 151.635 95.0891C153.762 97.1729 156.302 98.8083 159.099 99.8948C161.896 100.981 164.891 101.496 167.898 101.406C171.46 101.438 174.992 100.759 178.276 99.4104C181.52 98.0791 184.457 96.1229 186.911 93.6584C186.963 93.6061 187.047 93.6025 187.103 93.6506L198.748 103.698C198.808 103.749 198.814 103.839 198.761 103.898C192.264 111.073 180.762 116.764 166.364 116.764C155.225 116.764 145.571 112.854 138.795 106.199C132.019 99.5445 128 90.1203 128 78.928C128 56.2988 144.169 40.9174 166.971 40.9172Z" fill="currentColor"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M272.297 40.9241C294.364 40.9243 308.634 56.4443 308.634 77.8733C308.603 80.0994 308.45 82.3226 308.177 84.5325C308.168 84.6028 308.108 84.6555 308.037 84.6555H253.776C253.687 84.6555 253.62 84.7398 253.64 84.8274C255.961 95.114 263.91 101.384 274.9 101.384C278.479 101.459 282.026 100.724 285.269 99.2327C288.467 97.7617 291.284 95.5949 293.505 92.8977C293.555 92.8373 293.644 92.829 293.704 92.8792L294.151 93.2522L305.314 102.971C305.371 103.02 305.379 103.107 305.332 103.165C299.016 110.999 288.524 116.764 273.977 116.764C252.205 116.764 235.781 101.687 235.781 78.7805C235.781 67.5426 239.651 58.1184 246.1 51.4641C249.503 48.0425 253.584 45.3422 258.089 43.5295C262.594 41.7168 267.43 40.83 272.297 40.9241ZM273.184 56.1526C270.429 56.0653 267.689 56.5639 265.148 57.6135C262.608 58.6639 260.328 60.2418 258.465 62.2375C256.265 64.7317 254.709 67.7085 253.927 70.9172C253.905 71.0052 253.972 71.09 254.062 71.0901H291.098C291.188 71.0901 291.255 71.0045 291.233 70.9163C289.077 62.1122 282.94 56.1526 273.184 56.1526Z" fill="currentColor"/>
+<path d="M225.661 11.9758C225.739 11.9758 225.802 12.0388 225.802 12.1165V115.625C225.802 115.703 225.739 115.766 225.661 115.766H208.977C208.899 115.766 208.836 115.703 208.836 115.625V12.1165C208.836 12.0389 208.899 11.976 208.977 11.9758H225.661Z" fill="currentColor"/>
+<path d="M361.385 40.9192C361.463 40.9183 361.527 40.9816 361.527 41.0598V59.6116C361.527 59.6933 361.457 59.7582 361.376 59.7522C359.432 59.6052 357.496 59.4612 356.304 59.4612C343.246 59.4613 335.579 68.6515 335.579 80.7151V115.625C335.579 115.703 335.516 115.766 335.438 115.766H318.755C318.677 115.766 318.614 115.703 318.614 115.625V42.1047C318.614 42.0272 318.677 41.9641 318.755 41.9641H335.438C335.516 41.9641 335.579 42.0272 335.579 42.1047V53.0413C335.579 53.098 335.626 53.1438 335.683 53.1438C335.715 53.1438 335.746 53.1287 335.766 53.1028C341.617 45.2882 350.254 40.9407 359.379 40.9407L361.385 40.9192Z" fill="currentColor"/>
+<path d="M388.332 11.9758C388.41 11.9759 388.473 12.0388 388.473 12.1165V75.2815C388.473 75.4096 388.63 75.4707 388.717 75.3762L419.408 41.9211C419.435 41.8922 419.472 41.8752 419.512 41.8752H439.575C439.697 41.8752 439.762 42.0202 439.68 42.1106L412.928 71.6262C412.886 71.6727 412.879 71.7419 412.912 71.7952L440.031 115.551C440.089 115.645 440.022 115.766 439.912 115.766H420.879C420.83 115.766 420.784 115.741 420.759 115.699L401.525 84.7874C401.5 84.7463 401.455 84.7209 401.406 84.7209H401.226C401.187 84.7209 401.149 84.7373 401.122 84.7659L388.51 98.3167C388.486 98.3426 388.473 98.3769 388.473 98.4124V115.625C388.473 115.703 388.41 115.766 388.332 115.766H371.647C371.57 115.766 371.507 115.703 371.507 115.625V12.1165C371.507 12.0388 371.57 11.9759 371.647 11.9758H388.332Z" fill="currentColor"/>
+<path d="M99.5716 10.788C101.571 12.1272 101.742 14.9444 100.04 16.646L85.4244 31.2618C84.1035 32.5828 82.0542 32.7914 80.3915 31.9397C75.4752 29.421 69.9035 28 64 28C44.1177 28 28 44.1177 28 64C28 69.9035 29.421 75.4752 31.9397 80.3915C32.7914 82.0542 32.5828 84.1035 31.2618 85.4244L16.646 100.04C14.9444 101.742 12.1272 101.571 10.788 99.5716C3.97411 89.3989 0 77.1635 0 64C0 28.6538 28.6538 0 64 0C77.1635 0 89.3989 3.97411 99.5716 10.788Z" fill="currentColor" fill-opacity="0.4"/>
+<path d="M84 64C84 75.0457 75.0457 84 64 84C52.9543 84 44 75.0457 44 64C44 52.9543 52.9543 44 64 44C75.0457 44 84 52.9543 84 64Z" fill="currentColor"/>
+<path d="M100.04 111.354C101.742 113.056 101.571 115.873 99.5717 117.212C89.3989 124.026 77.1636 128 64 128C50.8364 128 38.6011 124.026 28.4283 117.212C26.4289 115.873 26.2581 113.056 27.9597 111.354L42.5755 96.7382C43.8965 95.4172 45.9457 95.2085 47.6084 96.0603C52.5248 98.579 58.0964 100 64 100C69.9036 100 75.4753 98.579 80.3916 96.0603C82.0543 95.2085 84.1036 95.4172 85.4245 96.7382L100.04 111.354Z" fill="currentColor"/>
+</svg></span>
+        <p class="lead">Autenticación y gestión de usuarios completas. Llegan como <span class="bright">componentes que ya funcionan</span>, no como un SDK que te toca cablear.</p>
+        <div class="stat-row fill" style="margin-top:10px;">
+          <div class="stat"><span class="v">1</span><span class="l">Componente para tener login</span></div>
+          <div class="stat"><span class="v">0</span><span class="l">Tablas de usuarios que mantener</span></div>
+          <div class="stat"><span class="v">50K</span><span class="l">Usuarios retenidos gratis al mes</span></div>
+        </div>
+        <a class="linkbar" href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer">
+          <span>Y un dashboard de verdad: usuarios, sesiones, organizaciones y logs, sin que construyas un panel de admin.</span>
+          <span class="linkbar-url">dashboard.clerk.com &rarr;</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══ 05 · QUÉ TRAE ══════════════════════════════════════════════ -->
+    <section class="slide" data-title="Qué trae">
+      <div class="slide-body">
+        <p class="basic-line">40 <b>PRINT "QUÉ TRAE"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Todo lo que ibas a escribir a mano</h2>
+        <div class="grid-table cols-3 fill" style="margin-top:2px;">
+          <div class="cell">
+            <span class="cell-title">Componentes</span>
+            <span class="cell-copy">&lt;SignIn /&gt;, &lt;SignUp /&gt; y &lt;UserButton /&gt; con tu marca.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Organizations</span>
+            <span class="cell-copy">Multi-tenant B2B: equipos, roles e invitaciones.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Billing</span>
+            <span class="cell-copy">Suscripciones y features bajo llave por plan.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Seguridad</span>
+            <span class="cell-copy">MFA, passkeys y detección de bots por defecto.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">SSO</span>
+            <span class="cell-copy">Google, GitHub y SAML para empresas.</span>
+          </div>
+          <div class="cell">
+            <span class="cell-title">Webhooks</span>
+            <span class="cell-copy">Cada evento de usuario, directo a tu base.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 06 · FUNCIONA CON ══════════════════════════════════════════ -->
+    <section class="slide" data-title="Funciona con">
+      <div class="slide-body">
+        <p class="basic-line">50 <b>PRINT "FUNCIONA CON"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Tu stack ya tiene soporte</h2>
+        <div class="grid-table cols-4 fill" style="margin-top:2px;">
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Next.js"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z"/></svg></span>
+            <span class="cell-value">Next.js</span>
+            <span class="label">El quickstart de hoy</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="React"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.41 0-.783.093-1.106.278-1.375.793-1.683 3.264-.973 6.365C1.98 8.917 0 10.42 0 12.004c0 1.59 1.99 3.097 5.043 4.03-.704 3.113-.39 5.588.988 6.38.32.187.69.275 1.102.275 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.41 0 .783-.09 1.106-.275 1.374-.792 1.683-3.263.973-6.365C22.02 15.096 24 13.59 24 12.004c0-1.59-1.99-3.097-5.043-4.032.704-3.11.39-5.587-.988-6.38-.318-.184-.688-.277-1.092-.278zm-.005 1.09v.006c.225 0 .406.044.558.127.666.382.955 1.835.73 3.704-.054.46-.142.945-.25 1.44-.96-.236-2.006-.417-3.107-.534-.66-.905-1.345-1.727-2.035-2.447 1.592-1.48 3.087-2.292 4.105-2.295zm-9.77.02c1.012 0 2.514.808 4.11 2.28-.686.72-1.37 1.537-2.02 2.442-1.107.117-2.154.298-3.113.538-.112-.49-.195-.964-.254-1.42-.23-1.868.054-3.32.714-3.707.19-.09.4-.127.563-.132zm4.882 3.05c.455.468.91.992 1.36 1.564-.44-.02-.89-.034-1.345-.034-.46 0-.915.01-1.36.034.44-.572.895-1.096 1.345-1.565zM12 8.1c.74 0 1.477.034 2.202.093.406.582.802 1.203 1.183 1.86.372.64.71 1.29 1.018 1.946-.308.655-.646 1.31-1.013 1.95-.38.66-.773 1.288-1.18 1.87-.728.063-1.466.098-2.21.098-.74 0-1.477-.035-2.202-.093-.406-.582-.802-1.204-1.183-1.86-.372-.64-.71-1.29-1.018-1.946.303-.657.646-1.313 1.013-1.954.38-.66.773-1.286 1.18-1.868.728-.064 1.466-.098 2.21-.098zm-3.635.254c-.24.377-.48.763-.704 1.16-.225.39-.435.782-.635 1.174-.265-.656-.49-1.31-.676-1.947.64-.15 1.315-.283 2.015-.386zm7.26 0c.695.103 1.365.23 2.006.387-.18.632-.405 1.282-.66 1.933-.2-.39-.41-.783-.64-1.174-.225-.392-.465-.774-.705-1.146zm3.063.675c.484.15.944.317 1.375.498 1.732.74 2.852 1.708 2.852 2.476-.005.768-1.125 1.74-2.857 2.475-.42.18-.88.342-1.355.493-.28-.958-.646-1.956-1.1-2.98.45-1.017.81-2.01 1.085-2.964zm-13.395.004c.278.96.645 1.957 1.1 2.98-.45 1.017-.812 2.01-1.086 2.964-.484-.15-.944-.318-1.37-.5-1.732-.737-2.852-1.706-2.852-2.474 0-.768 1.12-1.742 2.852-2.476.42-.18.88-.342 1.356-.494zm11.678 4.28c.265.657.49 1.312.676 1.948-.64.157-1.316.29-2.016.39.24-.375.48-.762.705-1.158.225-.39.435-.788.636-1.18zm-9.945.02c.2.392.41.783.64 1.175.23.39.465.772.705 1.143-.695-.102-1.365-.23-2.006-.386.18-.63.406-1.282.66-1.933zM17.92 16.32c.112.493.2.968.254 1.423.23 1.868-.054 3.32-.714 3.708-.147.09-.338.128-.563.128-1.012 0-2.514-.807-4.11-2.28.686-.72 1.37-1.536 2.02-2.44 1.107-.118 2.154-.3 3.113-.54zm-11.83.01c.96.234 2.006.415 3.107.532.66.905 1.345 1.727 2.035 2.446-1.595 1.483-3.092 2.295-4.11 2.295-.22-.005-.406-.05-.553-.132-.666-.38-.955-1.834-.73-3.703.054-.46.142-.944.25-1.438zm4.56.64c.44.02.89.034 1.345.034.46 0 .915-.01 1.36-.034-.44.572-.895 1.095-1.345 1.565-.455-.47-.91-.993-1.36-1.565z"/></svg></span>
+            <span class="cell-value">React</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="React Router"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.118 5.466a2.306 2.306 0 00-.623.08c-.278.067-.702.332-.953.583-.41.423-.49.609-.662 1.469-.08.423.41 1.43.847 1.734.45.317 1.085.502 2.065.608 1.429.16 1.84.636 1.84 2.197 0 1.377-.385 1.747-1.96 1.906-1.707.172-2.58.834-2.765 2.117-.106.781.41 1.76 1.125 2.091 1.627.768 3.15-.198 3.467-2.196.211-1.284.622-1.642 1.998-1.747 1.588-.133 2.409-.675 2.713-1.787.278-1.02-.304-2.157-1.297-2.554-.264-.106-.873-.238-1.35-.291-1.495-.16-1.879-.424-2.038-1.39-.225-1.337-.317-1.562-.794-2.09a2.174 2.174 0 00-1.613-.73zm-4.785 4.36a2.145 2.145 0 00-.497.048c-1.469.318-2.17 2.051-1.35 3.295 1.178 1.774 3.944.953 3.97-1.177.012-1.193-.98-2.143-2.123-2.166zM2.089 14.19a2.22 2.22 0 00-.427.052c-2.158.476-2.237 3.626-.106 4.182.53.145.582.145 1.111.013 1.191-.318 1.866-1.456 1.549-2.607-.278-1.02-1.144-1.664-2.127-1.64zm19.824.008c-.233.002-.477.058-.784.162-1.39.477-1.866 2.092-.98 3.336.557.794 1.96 1.058 2.82.516 1.416-.874 1.363-3.057-.093-3.746-.38-.186-.663-.271-.963-.268z"/></svg></span>
+            <span class="cell-value">React Router</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="TanStack Start"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0c6.627 0 9.166 4.102 9.166 12S18.626 24 12 24s-9.166-4.096-9.166-12c0-7.898 2.54-12 9.166-12m3.031 17.485c-.861 0-1.33.234-1.708.423-.327.164-.582.292-1.148.292-.567 0-.822-.128-1.148-.292-.378-.189-.848-.423-1.71-.423-.86 0-1.33.234-1.708.423-.327.164-.581.292-1.148.292v1.251c.862 0 1.331-.234 1.709-.423.326-.163.581-.292 1.148-.292s.821.129 1.148.292c.378.189.847.423 1.709.423.861 0 1.33-.234 1.709-.423.326-.163.58-.292 1.147-.292s.822.129 1.148.292c.378.189.848.423 1.71.423v-1.25c-.565 0-.822-.13-1.149-.293-.377-.189-.847-.423-1.709-.423m.41-12.536c.65-.586 0-1.648-.813-1.328-.45.18-.873.438-1.251.779a4.2 4.2 0 0 0-1.202 1.94 4.2 4.2 0 0 0-1.203-1.94 4.3 4.3 0 0 0-1.25-.779c-.814-.32-1.463.742-.814 1.328l2.385 2.153a4.86 4.86 0 0 0-2.731-.839c-.552 0-1.082.09-1.58.26-.836.284-.604 1.532.275 1.532h3.326a4.2 4.2 0 0 0-2.012.988 4 4 0 0 0-.9 1.165c-.403.776.588 1.529 1.237.948l2.686-2.42-.2 6.656c0 .08-.047.158-.107.223a5 5 0 0 1-.257-.123c-.378-.189-.848-.423-1.71-.423-.861 0-1.33.234-1.708.423-.327.164-.581.292-1.148.292v1.251c.861 0 1.33-.234 1.709-.423.326-.164.58-.292 1.148-.292.566 0 .821.128 1.148.292.377.189.847.423 1.708.423.862 0 1.332-.234 1.71-.423.326-.164.58-.292 1.147-.292s.822.128 1.148.292c.378.189.848.423 1.71.423v-1.25c-.565 0-.822-.13-1.149-.293v-.005c-.378-.19-.847-.424-1.709-.424-.861 0-1.33.235-1.709.424-.097.045-.189.094-.283.131a.34.34 0 0 1-.12-.232l-.2-6.69 2.722 2.457c.65.587 1.64-.166 1.236-.948a4.11 4.11 0 0 0-2.911-2.153h3.326c.882 0 1.108-1.245.275-1.531a4.88 4.88 0 0 0-4.311.578l2.385-2.152z"/></svg></span>
+            <span class="cell-value">TanStack Start</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Astro"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.358 20.162c-1.186-1.07-1.532-3.316-1.038-4.944.856 1.026 2.043 1.352 3.272 1.535 1.897.283 3.76.177 5.522-.678.202-.098.388-.229.608-.36.166.473.209.95.151 1.437-.14 1.185-.738 2.1-1.688 2.794-.38.277-.782.525-1.175.787-1.205.804-1.531 1.747-1.078 3.119l.044.148a3.158 3.158 0 0 1-1.407-1.188 3.31 3.31 0 0 1-.544-1.815c-.004-.32-.004-.642-.048-.958-.106-.769-.472-1.113-1.161-1.133-.707-.02-1.267.411-1.415 1.09-.012.053-.028.104-.045.165h.002zm-5.961-4.445s3.24-1.575 6.49-1.575l2.451-7.565c.092-.366.36-.614.662-.614.302 0 .57.248.662.614l2.45 7.565c3.85 0 6.491 1.575 6.491 1.575L16.088.727C15.93.285 15.663 0 15.303 0H8.697c-.36 0-.615.285-.784.727l-5.516 14.99z"/></svg></span>
+            <span class="cell-value">Astro</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Nuxt"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13.4642 19.8295h8.9218c.2834 0 .5618-.0723.8072-.2098a1.5899 1.5899 0 0 0 .5908-.5732 1.5293 1.5293 0 0 0 .216-.783 1.529 1.529 0 0 0-.2167-.7828L17.7916 7.4142a1.5904 1.5904 0 0 0-.5907-.573 1.6524 1.6524 0 0 0-.807-.2099c-.2833 0-.5616.0724-.807.2098a1.5904 1.5904 0 0 0-.5907.5731L13.4642 9.99l-2.9954-5.0366a1.5913 1.5913 0 0 0-.591-.573 1.6533 1.6533 0 0 0-.8071-.2098c-.2834 0-.5617.0723-.8072.2097a1.5913 1.5913 0 0 0-.591.573L.2168 17.4808A1.5292 1.5292 0 0 0 0 18.2635c-.0001.2749.0744.545.216.783a1.59 1.59 0 0 0 .5908.5732c.2454.1375.5238.2098.8072.2098h5.6003c2.219 0 3.8554-.9454 4.9813-2.7899l2.7337-4.5922L16.3935 9.99l4.3944 7.382h-5.8586ZM7.123 17.3694l-3.9083-.0009 5.8586-9.8421 2.9232 4.921-1.9572 3.2892c-.7478 1.1967-1.5972 1.6328-2.9163 1.6328z"/></svg></span>
+            <span class="cell-value">Nuxt</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Vue"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24,1.61H14.06L12,5.16,9.94,1.61H0L12,22.39ZM12,14.08,5.16,2.23H9.59L12,6.41l2.41-4.18h4.43Z"/></svg></span>
+            <span class="cell-value">Vue</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Expo"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 20.084c.043.53.23 1.063.718 1.778.58.849 1.576 1.315 2.303.567.49-.505 5.794-9.776 8.35-13.29a.761.761 0 011.248 0c2.556 3.514 7.86 12.785 8.35 13.29.727.748 1.723.282 2.303-.567.57-.835.728-1.42.728-2.046 0-.426-8.26-15.798-9.092-17.078-.8-1.23-1.044-1.498-2.397-1.542h-1.032c-1.353.044-1.597.311-2.398 1.542C8.267 3.991.33 18.758 0 19.77Z"/></svg></span>
+            <span class="cell-value">Expo</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Swift"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7.508 0c-.287 0-.573 0-.86.002-.241.002-.483.003-.724.01-.132.003-.263.009-.395.015A9.154 9.154 0 0 0 4.348.15 5.492 5.492 0 0 0 2.85.645 5.04 5.04 0 0 0 .645 2.848c-.245.48-.4.972-.495 1.5-.093.52-.122 1.05-.136 1.576a35.2 35.2 0 0 0-.012.724C0 6.935 0 7.221 0 7.508v8.984c0 .287 0 .575.002.862.002.24.005.481.012.722.014.526.043 1.057.136 1.576.095.528.25 1.02.495 1.5a5.03 5.03 0 0 0 2.205 2.203c.48.244.97.4 1.498.495.52.093 1.05.124 1.576.138.241.007.483.009.724.01.287.002.573.002.86.002h8.984c.287 0 .573 0 .86-.002.241-.001.483-.003.724-.01a10.523 10.523 0 0 0 1.578-.138 5.322 5.322 0 0 0 1.498-.495 5.035 5.035 0 0 0 2.203-2.203c.245-.48.4-.972.495-1.5.093-.52.124-1.05.138-1.576.007-.241.009-.481.01-.722.002-.287.002-.575.002-.862V7.508c0-.287 0-.573-.002-.86a33.662 33.662 0 0 0-.01-.724 10.5 10.5 0 0 0-.138-1.576 5.328 5.328 0 0 0-.495-1.5A5.039 5.039 0 0 0 21.152.645 5.32 5.32 0 0 0 19.654.15a10.493 10.493 0 0 0-1.578-.138 34.98 34.98 0 0 0-.722-.01C17.067 0 16.779 0 16.492 0H7.508zm6.035 3.41c4.114 2.47 6.545 7.162 5.549 11.131-.024.093-.05.181-.076.272l.002.001c2.062 2.538 1.5 5.258 1.236 4.745-1.072-2.086-3.066-1.568-4.088-1.043a6.803 6.803 0 0 1-.281.158l-.02.012-.002.002c-2.115 1.123-4.957 1.205-7.812-.022a12.568 12.568 0 0 1-5.64-4.838c.649.48 1.35.902 2.097 1.252 3.019 1.414 6.051 1.311 8.197-.002C9.651 12.73 7.101 9.67 5.146 7.191a10.628 10.628 0 0 1-1.005-1.384c2.34 2.142 6.038 4.83 7.365 5.576C8.69 8.408 6.208 4.743 6.324 4.86c4.436 4.47 8.528 6.996 8.528 6.996.154.085.27.154.36.213.085-.215.16-.437.224-.668.708-2.588-.09-5.548-1.893-7.992z"/></svg></span>
+            <span class="cell-value">Swift</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Android"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z"/></svg></span>
+            <span class="cell-value">Android</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Express"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.262 16.666h1.146l6.975-9.325H19.22zm9.778 1.441v.004l-4.334-5.706-.557.74 4.873 6.682H.945V4.173h9.505l5.026 6.7.574-.772-4.374-5.928h.003l-.719-.945H0v17.544h24zM10.917 8.705a3.8 3.8 0 0 0-1.292-1.183q-.796-.45-1.916-.45c-.746 0-1.37.14-1.906.424a3.76 3.76 0 0 0-1.31 1.12 4.9 4.9 0 0 0-.75 1.581 7.17 7.17 0 0 0 0 3.696c.148.567.402 1.101.75 1.573a3.5 3.5 0 0 0 1.31 1.066q.803.39 1.906.389 1.77 0 2.739-.868.966-.867 1.328-2.457h-1.139q-.271 1.084-.977 1.734-.704.651-1.952.65-.812 0-1.392-.342a3.1 3.1 0 0 1-.957-.869 3.5 3.5 0 0 1-.551-1.182 5 5 0 0 1-.17-1.133 9 9 0 0 0-.015-.286 4.5 4.5 0 0 1 .015-.829c.047-.418.147-.83.296-1.223A3.7 3.7 0 0 1 5.54 9.05a2.9 2.9 0 0 1 .922-.742q.541-.28 1.246-.28c.47 0 .869.093 1.23.28q.541.281.922.742.379.461.587 1.057t.225 1.246H5.625l.004.957h6.182a7.3 7.3 0 0 0-.18-1.924 4.9 4.9 0 0 0-.715-1.68z"/></svg></span>
+            <span class="cell-value">Express</span>
+          </div>
+          <div class="cell fw">
+            <span class="fw-mark" role="img" aria-label="Fastify"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.245 6.49L24 4.533l-.031-.121-7.473 1.967c.797-1.153.523-2.078.523-2.078s-2.387 1.524-4.193 1.485c-1.804-.04-2.387-.52-5.155.362-2.768.882-3.551 3.59-4.351 4.173-.804.583-3.32 2.477-3.32 2.477l.006.034 2.27-.724s-.622.585-1.945 2.37l-.062-.057.002.011s1.064 1.626 2.107 1.324a2.14 2.14 0 0 0 .353-.147c.419.234.967.463 1.572.525 0 0-.41-.475-.752-1.017l.238-.154.865.318-.096-.812c.003-.003.006-.003.008-.006l.849.311-.105-.738a5.65 5.65 0 0 1 .322-.158l.885-3.345 3.662-2.497-.291.733c-.741 1.826-2.135 2.256-2.135 2.256l-.582.22c-.433.512-.614.637-.764 2.353.348-.088.682-.107.984-.028 1.564.421 2.107 2.307 1.685 2.827-.104.13-.356.354-.673.617H7.77l-.008.514-.065.051h-.645l-.009.504-.17.127c-.607.011-1.373-.518-1.373-.518 0 .481.401 1.225.401 1.225l.07-.034-.061.045s1.625 1.083 2.646.681c.91-.356 3.263-2.213 5.296-3.093l6.15-1.62.811-2.1-4.688 1.235v-1.889l5.5-1.448.811-2.1-6.31 1.662V8.367zm-11.163 4l1.459-.384.02.074-.455 1.179-1.513.398zm.503 2.526l-1.512.398.489-1.266 1.459-.385.02.074zm1.971-.424l-1.513.398.49-1.266 1.459-.385.02.073Z"/></svg></span>
+            <span class="cell-value">Fastify</span>
+          </div>
+        </div>
+        <p class="note">Todos salen del mismo comando.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 07 · CLERK CLI ═════════════════════════════════════════════ -->
+    <section class="slide" data-title="Clerk CLI">
+      <div class="slide-body">
+        <p class="basic-line">60 <b>PRINT "CLERK CLI"</b></p>
+        <h2 class="pixel-heading" data-scramble>Clerk CLI</h2>
+        <p class="lead">Toda tu cuenta de Clerk desde la terminal. Tú la manejas, y tu agente también.</p>
+        <div class="terminal fill" style="margin-top:4px;">
+          <div class="terminal-bar"><span>Instalar</span><span>bash</span></div>
+          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npm install -g clerk</span>
+
+<span class="comment"># o sin instalar nada</span>
+<span class="prompt">$ </span><span class="cmd">npx clerk</span>   <span class="comment">·</span>   <span class="prompt">$ </span><span class="cmd">bunx clerk</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 08 · CLERK INIT ════════════════════════════════════════════ -->
+    <section class="slide" data-title="clerk init">
+      <div class="slide-body">
+        <p class="basic-line">70 <b>PRINT "UN SOLO COMANDO"</b></p>
+        <div class="terminal fill">
+          <div class="terminal-bar"><span>Proyecto</span><span>~/mi-app</span></div>
+          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npx clerk init</span>
+<span class="out">✓ Next.js detectado · bun</span>
+<span class="out">✓ @clerk/nextjs instalado</span>
+<span class="out">✓ Middleware y &lt;ClerkProvider /&gt; listos</span>
+<span class="ok">✓ Keys escritas en .env.local</span></div>
+        </div>
+        <div class="flow" style="margin-top:2px;">
+          <div class="flow-step">
+            <span class="num">01</span>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <span class="cell-title">Detecta</span>
+              <span class="cell-copy">Tu framework y tu package manager.</span>
+            </div>
+            <span class="arrow" aria-hidden="true">&gt;</span>
+          </div>
+          <div class="flow-step">
+            <span class="num">02</span>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <span class="cell-title">Instala</span>
+              <span class="cell-copy">SDK, middleware y páginas de auth.</span>
+            </div>
+            <span class="arrow" aria-hidden="true">&gt;</span>
+          </div>
+          <div class="flow-step">
+            <span class="num">03</span>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <span class="cell-title">Conecta</span>
+              <span class="cell-copy">Linkea tu app y baja las keys.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 09 · COMANDOS ══════════════════════════════════════════════ -->
+    <section class="slide" data-title="Comandos">
+      <div class="slide-body">
+        <p class="basic-line">80 <b>PRINT "COMANDOS"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Los que vas a usar</h2>
+        <div class="grid-table cols-2 fill" style="margin-top:2px;">
+          <div class="cell"><span class="cell-value bright">clerk auth login</span><span class="cell-copy">Entra a tu cuenta.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk init</span><span class="cell-copy">Configura Clerk en el proyecto.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk env pull</span><span class="cell-copy">Baja las keys a .env.local.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk users</span><span class="cell-copy">Crea, lista y borra usuarios.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk doctor</span><span class="cell-copy">Revisa que tu integración esté sana.</span></div>
+          <div class="cell"><span class="cell-value bright">clerk deploy</span><span class="cell-copy">Pasa la app a producción.</span></div>
+        </div>
+        <p class="note" style="margin-top:2px;">Y cuando compile lento: <span class="bright">clerk bird</span> — Flappy Bird en la terminal.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 10 · CLERK SKILLS ══════════════════════════════════════════ -->
+    <section class="slide" data-title="Clerk Skills">
+      <div class="slide-body">
+        <p class="basic-line">90 <b>PRINT "CLERK SKILLS"</b></p>
+        <h2 class="pixel-heading" data-scramble>Clerk Skills</h2>
+        <p class="lead">Tu agente deja de adivinar cómo se usa Clerk. Las skills le dan los patrones oficiales, escritos por quienes hacen el producto.</p>
+        <div class="terminal fill" style="margin-top:4px;">
+          <div class="terminal-bar"><span>Instalar las skills</span><span>bash</span></div>
+          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npx skills add clerk/skills</span></div>
+        </div>
+        <p class="note">Claude Code · Cursor · Windsurf · Copilot · Codex · Gemini CLI</p>
+      </div>
+    </section>
+
+    <!-- ═══ 11 · LAS SKILLS ════════════════════════════════════════════ -->
+    <section class="slide" data-title="Las skills">
+      <div class="slide-body">
+        <p class="basic-line">100 <b>PRINT "EL CATÁLOGO"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>Una skill por trabajo</h2>
+        <div class="grid-table cols-3 fill" style="margin-top:2px;">
+          <div class="cell"><span class="cell-value bright">/clerk</span><span class="cell-copy">Enruta al resto.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-setup</span><span class="cell-copy">Clerk en cualquier framework.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-cli</span><span class="cell-copy">Maneja Clerk desde la terminal.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-custom-ui</span><span class="cell-copy">Flujos y estilos propios.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-orgs</span><span class="cell-copy">Multi-tenant B2B.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-billing</span><span class="cell-copy">Suscripciones y feature gating.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-webhooks</span><span class="cell-copy">Eventos en tiempo real.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-testing</span><span class="cell-copy">E2E de los flujos de auth.</span></div>
+          <div class="cell"><span class="cell-value bright">/clerk-nextjs-patterns</span><span class="cell-copy">Middleware, Server Actions, caché.</span></div>
+        </div>
+        <p class="note" style="margin-top:2px;">Más las de cada plataforma: React, TanStack, Astro, Nuxt, Vue, Expo, Swift y Android.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 12 · LA DEMO ═══════════════════════════════════════════════ -->
+    <section class="slide" data-title="Los 10 minutos">
+      <div class="slide-body">
+        <p class="basic-line">110 <b>PRINT "LOS 10 MINUTOS"</b></p>
+        <h2 class="pixel-heading sm" data-scramble>De cero a login, en vivo</h2>
+        <ul class="timeline fill" style="margin-top:2px;">
+          <li><span class="t">00:00</span><span>npx clerk init sobre un Next.js recién creado</span></li>
+          <li><span class="t">02:00</span><span>Levantar el server y ver &lt;SignIn /&gt; ya funcionando</span></li>
+          <li><span class="t">04:00</span><span>Poner &lt;UserButton /&gt; en el header</span></li>
+          <li><span class="t">06:00</span><span>Proteger /dashboard con auth() en el middleware</span></li>
+          <li><span class="t">08:00</span><span>Pedirle a la skill que agregue Organizations</span></li>
+          <li><span class="t">10:00</span><span class="bright">clerk doctor · todo verde</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══ 13 · CIERRE ════════════════════════════════════════════════ -->
+    <section class="slide" data-title="Cierre">
+      <div class="slide-body" data-center="true">
+        <h2 class="pixel-heading lg" data-scramble style="max-width: 20ch;">Deja de escribir auth y ponte a shippear</h2>
+        <p class="lead" style="text-align:center;">El siguiente paso es <span class="bright">npx clerk init</span> en el proyecto que tienes abierto ahora.</p>
+        <span class="wordmark">the next craft</span>
+        <p class="note">clerk.com/docs · jibaru.dev</p>
+        <p class="ready">READY.<span class="cursor">█</span></p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="chrome">
+  <div class="topbar">
+    <span class="deck-title">Agrega auth a tu app en menos de 10 min — Clerk × The Next Craft</span>
+    <button type="button" class="keycap" id="btn-index" aria-expanded="false" aria-controls="index">Index</button>
+  </div>
+  <div class="botbar">
+    <span class="counter">
+      <span id="counter-num">01 / 13</span>
+      <span class="progress" id="progress" aria-hidden="true"></span>
+    </span>
+    <span class="pager-keys">
+      <button type="button" class="keycap keycap-ghost" id="btn-prev" aria-label="Diapositiva anterior">←</button>
+      <button type="button" class="keycap keycap-ghost" id="btn-next" aria-label="Diapositiva siguiente">→</button>
+    </span>
+  </div>
+</div>
+
+<div class="index" id="index" hidden role="dialog" aria-modal="true" aria-label="Índice de diapositivas">
+  <div class="index-backdrop"></div>
+  <div class="index-panel">
+    <div class="index-header">
+      <span class="label" style="color:var(--bright);">Index</span>
+      <button type="button" class="keycap keycap-ghost" id="btn-index-close" aria-label="Cerrar índice">Esc</button>
+    </div>
+    <ol class="index-list" id="index-list"></ol>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var deck = document.getElementById("deck");
+  var stage = document.getElementById("stage");
+  var slides = Array.prototype.slice.call(stage.querySelectorAll(".slide"));
+  var active = 0;
+
+  /* ── Escala: el escenario 16:9 siempre entra completo en la ventana ── */
+  function fit() {
+    var pad = 56; // deja aire para el chrome fijo
+    var s = Math.min(
+      (window.innerWidth - pad) / 1280,
+      (window.innerHeight - pad) / 720
+    );
+    stage.style.setProperty("--scale", Math.max(s, 0.1));
+  }
+  fit();
+  window.addEventListener("resize", fit);
+
+  /* ── Decode binario → texto (firma del look C64) ────────────────────── */
+  function scramble(el) {
+    var real = el.getAttribute("data-text") || el.textContent;
+    el.setAttribute("data-text", real);
+    if (reduced) { el.textContent = real; return; }
+
+    // Duracion fija (~0.5s) sin importar el largo: un titular corto y uno
+    // largo tardan lo mismo, asi el ritmo no cambia entre diapositivas.
+    var FRAMES = 30;
+    var frame = 0;
+    var chars = real.split("");
+    if (el._raf) cancelAnimationFrame(el._raf);
+
+    function tick() {
+      var settled = Math.ceil((frame / FRAMES) * chars.length);
+      var out = "";
+      for (var i = 0; i < chars.length; i++) {
+        if (chars[i] === " ") { out += " "; continue; }
+        out += i < settled ? chars[i] : (Math.random() < 0.5 ? "0" : "1");
+      }
+      el.textContent = out;
+      frame++;
+      if (frame <= FRAMES) el._raf = requestAnimationFrame(tick);
+      else el.textContent = real;
+    }
+    el._raf = requestAnimationFrame(tick);
+  }
+
+  /* ── Navegación ─────────────────────────────────────────────────────── */
+  var counterNum = document.getElementById("counter-num");
+  var progress = document.getElementById("progress");
+  var btnPrev = document.getElementById("btn-prev");
+  var btnNext = document.getElementById("btn-next");
+
+  function pad2(n) { return n < 10 ? "0" + n : String(n); }
+
+  function render() {
+    slides.forEach(function (s, i) {
+      var on = i === active;
+      s.setAttribute("data-active", on ? "true" : "false");
+      s.setAttribute("aria-hidden", on ? "false" : "true");
+    });
+
+    counterNum.textContent = pad2(active + 1) + " / " + pad2(slides.length);
+
+    var bar = "";
+    for (var i = 0; i < slides.length; i++) {
+      bar += i <= active ? '<i class="on"></i>' : "<i></i>";
+    }
+    progress.innerHTML = bar;
+
+    btnPrev.disabled = active === 0;
+    btnNext.disabled = active === slides.length - 1;
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".index-btn"),
+      function (b, i) {
+        if (i === active) b.setAttribute("aria-current", "true");
+        else b.removeAttribute("aria-current");
+      }
+    );
+
+    var h = slides[active].querySelector("[data-scramble]");
+    if (h) scramble(h);
+  }
+
+  function goTo(i) {
+    active = Math.max(0, Math.min(slides.length - 1, i));
+    render();
+  }
+  function prev() { goTo(active - 1); }
+  function next() { goTo(active + 1); }
+
+  btnPrev.addEventListener("click", prev);
+  btnNext.addEventListener("click", next);
+
+  /* ── Índice ─────────────────────────────────────────────────────────── */
+  var index = document.getElementById("index");
+  var indexList = document.getElementById("index-list");
+  var btnIndex = document.getElementById("btn-index");
+
+  slides.forEach(function (s, i) {
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "index-btn";
+    b.innerHTML =
+      '<span class="index-num">' + pad2(i + 1) + "</span>" +
+      '<span>' + (s.getAttribute("data-title") || "Slide") + "</span>";
+    b.addEventListener("click", function () { goTo(i); setIndex(false); });
+    li.appendChild(b);
+    indexList.appendChild(li);
+  });
+
+  function setIndex(open) {
+    index.hidden = !open;
+    btnIndex.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) indexList.querySelector(".index-btn").focus();
+    else btnIndex.focus();
+  }
+  btnIndex.addEventListener("click", function () { setIndex(index.hidden); });
+  document.getElementById("btn-index-close").addEventListener("click", function () { setIndex(false); });
+
+  /* ── Teclado ────────────────────────────────────────────────────────── */
+  document.addEventListener("keydown", function (e) {
+    if (!index.hidden) {
+      if (e.key === "Escape" || e.key === "g" || e.key === "G") {
+        setIndex(false); e.preventDefault();
+      }
+      return;
+    }
+    switch (e.key) {
+      case "ArrowRight": case "ArrowDown": case "PageDown": case " ":
+        next(); e.preventDefault(); break;
+      case "ArrowLeft": case "ArrowUp": case "PageUp":
+        prev(); e.preventDefault(); break;
+      case "Home": goTo(0); e.preventDefault(); break;
+      case "End": goTo(slides.length - 1); e.preventDefault(); break;
+      case "g": case "G": setIndex(true); e.preventDefault(); break;
+    }
+  });
+
+  /* ── Swipe ──────────────────────────────────────────────────────────── */
+  var touch = null;
+  deck.addEventListener("touchstart", function (e) {
+    var t = e.touches[0];
+    touch = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+
+  deck.addEventListener("touchend", function (e) {
+    if (!touch) return;
+    var t = e.changedTouches[0];
+    var dx = touch.x - t.clientX;
+    var dy = touch.y - t.clientY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 56) {
+      if (dx > 0) next(); else prev();
+    }
+    touch = null;
+  }, { passive: true });
+
+  /* ── Rueda / trackpad, con cooldown ─────────────────────────────────── */
+  var wheelAcc = 0, wheelAt = 0;
+  deck.addEventListener("wheel", function (e) {
+    if (!index.hidden) return;
+    var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (!d) return;
+    wheelAcc += d;
+    var now = Date.now();
+    if (Math.abs(wheelAcc) < 80 || now - wheelAt < 450) return;
+    if (wheelAcc > 0) next(); else prev();
+    wheelAcc = 0;
+    wheelAt = now;
+  }, { passive: true });
+
+  /* ── Boot loader: solo la primera vez de la sesión ───────────────────── */
+  var boot = document.getElementById("boot");
+
+  function startDeck() {
+    deck.setAttribute("data-mounted", "true");
+    render();
+  }
+
+  function runBoot() {
+    var lines = [
+      "**** THE NEXT CRAFT 64 BASIC V2 ****",
+      "",
+      "64K RAM SYSTEM  38911 BASIC BYTES FREE",
+      "",
+      "LOADING CLERK.PRG",
+      "READY."
+    ];
+    var log = document.getElementById("boot-log");
+    var count = document.getElementById("boot-count");
+    var bar = document.getElementById("boot-bar");
+    log.textContent = lines.join("\n");
+
+    var n = 0;
+    var timer = setInterval(function () {
+      n += Math.floor(Math.random() * 9) + 4;
+      if (n >= 100) n = 100;
+      count.textContent = ("00" + n).slice(-3);
+      var filled = Math.round(n / 5);
+      bar.textContent =
+        new Array(filled + 1).join("█") +
+        new Array(20 - filled + 1).join("░");
+      if (n === 100) {
+        clearInterval(timer);
+        setTimeout(function () {
+          boot.setAttribute("data-done", "true");
+          startDeck();
+          setTimeout(function () { boot.hidden = true; }, 700);
+        }, 260);
+      }
+    }, 70);
+  }
+
+  var booted = false;
+  try { booted = sessionStorage.getItem("tnc-clerk-booted") === "1"; } catch (err) { booted = false; }
+
+  if (reduced || booted) {
+    boot.hidden = true;
+    startDeck();
+  } else {
+    try { sessionStorage.setItem("tnc-clerk-booted", "1"); } catch (err) {}
+    render();
+    runBoot();
+  }
+
+  /* Saltar el boot con cualquier tecla o clic */
+  function skipBoot() {
+    if (boot.hidden || boot.getAttribute("data-done") === "true") return;
+    boot.setAttribute("data-done", "true");
+    startDeck();
+    setTimeout(function () { boot.hidden = true; }, 700);
+  }
+  document.addEventListener("keydown", skipBoot, { once: true });
+  boot.addEventListener("click", skipBoot);
+})();
+</script>
