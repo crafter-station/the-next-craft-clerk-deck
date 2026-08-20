@@ -1196,12 +1196,41 @@ body {
     if (h) scramble(h);
   }
 
+  /* ── La URL sigue a la diapositiva (?slide=N, 1-based) ───────────────── */
+
+  // replaceState y no pushState: con 13 diapositivas, pushState obligaria a
+  // pulsar "atras" trece veces para salir del deck.
+  function syncUrl() {
+    try {
+      var url = location.pathname + "?slide=" + (active + 1) + location.hash;
+      history.replaceState({ slide: active }, "", url);
+    } catch (err) {
+      // file:// y algunos iframes bloquean replaceState: la navegacion
+      // sigue funcionando, solo no se refleja en la barra de direcciones.
+    }
+  }
+
+  function slideFromUrl() {
+    var raw = new URLSearchParams(location.search).get("slide");
+    if (!raw) return null;
+    var n = parseInt(raw, 10);
+    if (isNaN(n)) return null;
+    return Math.max(0, Math.min(slides.length - 1, n - 1));
+  }
+
   function goTo(i) {
     active = Math.max(0, Math.min(slides.length - 1, i));
     render();
+    syncUrl();
   }
   function prev() { goTo(active - 1); }
   function next() { goTo(active + 1); }
+
+  // Por si alguien edita la URL a mano o usa atras/adelante
+  window.addEventListener("popstate", function () {
+    var i = slideFromUrl();
+    if (i !== null && i !== active) { active = i; render(); }
+  });
 
   btnPrev.addEventListener("click", prev);
   btnNext.addEventListener("click", next);
@@ -1329,7 +1358,12 @@ body {
   var booted = false;
   try { booted = sessionStorage.getItem("tnc-clerk-booted") === "1"; } catch (err) { booted = false; }
 
-  if (reduced || booted) {
+  // Entrar por ?slide=N es pedir esa diapositiva, no la charla desde el
+  // principio: en ese caso el boot sobra.
+  var deepLink = slideFromUrl();
+  if (deepLink !== null) active = deepLink;
+
+  if (reduced || booted || deepLink !== null) {
     boot.hidden = true;
     startDeck();
   } else {
@@ -1337,6 +1371,8 @@ body {
     render();
     runBoot();
   }
+
+  syncUrl();
 
   /* Saltar el boot con cualquier tecla o clic */
   function skipBoot() {

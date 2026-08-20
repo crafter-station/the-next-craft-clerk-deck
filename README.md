@@ -26,6 +26,22 @@ Google).
 | `Esc` | Cerrar el índice |
 | `Home` / `End` | Primera / última |
 
+### Enlazar una diapositiva
+
+La URL sigue a la diapositiva actual (`?slide=7`), así que se puede enlazar
+una concreta:
+
+```
+https://crafter-station.github.io/the-next-craft-clerk-deck/?slide=7
+```
+
+Entrar por ahí salta directo y se salta el boot. Los valores fuera de rango o
+inválidos caen en la primera. Usa `replaceState`, así que el botón "atrás"
+sale del deck de una vez en vez de recorrer las 13 diapositivas.
+
+Ojo: el número es posicional. Si reordenas diapositivas, los enlaces que hayas
+compartido apuntarán a otra.
+
 También responde a rueda del mouse, trackpad y swipe en móvil. Pon el navegador
 en pantalla completa (`F11`) antes de proyectar.
 
