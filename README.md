@@ -110,8 +110,10 @@ Convenciones que conviene respetar:
 index.html           # el entregable: un solo archivo, autocontenido
 build.py             # inlinea los SVG en la plantilla
 src/template.html    # el contenido y los estilos (acá se edita)
+og.png               # imagen de previsualizacion al compartir (generada)
 tools/
   make-favicon.py    # regenera el favicon desde un mapa ASCII
+  make-og.py         # regenera og.png capturando la portada
 assets/
   favicon.svg        # candado en pixel-art (generado)
   clerk-logo.svg     # logo oficial de Clerk
@@ -150,3 +152,17 @@ Se edita como dibujo, no como SVG — el mapa ASCII está en
 python tools/make-favicon.py   # -> assets/favicon.svg
 python build.py                # -> lo incrusta en index.html
 ```
+
+## Previsualización al compartir
+
+`og.png` es una **captura real de la portada**, no una imagen aparte: si
+cambias la diapositiva 1, regenérala y la tarjeta queda al día.
+
+```bash
+python tools/make-og.py   # -> og.png (1200x630)
+```
+
+A diferencia del favicon, esta imagen **no puede ir incrustada**: los
+crawlers de redes sociales no ejecutan JS ni aceptan data URIs, así que
+`og:image` apunta a una URL absoluta del sitio en Pages. Si el repo se
+mueve de dominio, hay que actualizar esa URL en `src/template.html`.
