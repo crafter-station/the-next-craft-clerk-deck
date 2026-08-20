@@ -26,6 +26,23 @@ Google).
 | `Esc` | Cerrar el índice |
 | `Home` / `End` | Primera / última |
 
+### Idioma
+
+El deck está en español y en inglés. El botón `EN` / `ES` de la barra superior
+cambia en vivo, y el idioma viaja en la URL:
+
+```
+...?slide=7&lang=en
+```
+
+El español vive en el HTML (así el archivo se lee e imprime sin JS) y el
+inglés en el objeto `EN` del `<script>`, indexado por `data-i18n`. Para
+traducir algo nuevo: ponle `data-i18n="sN.loquesea"` al elemento en
+`src/template.html` y añade esa clave a `EN`.
+
+Si el bloque lleva logos embebidos, en la traducción se referencian por
+posición con `{{m0}}`, `{{m1}}`… en vez de repetir el SVG.
+
 ### Enlazar una diapositiva
 
 La URL sigue a la diapositiva actual (`?slide=7`), así que se puede enlazar

@@ -615,6 +615,7 @@ body {
 .progress i.on { background: var(--bright); opacity: 1; }
 
 .pager-keys { display: flex; gap: 8px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
 
 /* ─── Índice ──────────────────────────────────────────────────────────── */
 
@@ -764,14 +765,14 @@ body {
   <div class="stage-scaler" id="stage">
 
     <!-- ═══ 01 · PORTADA ═══════════════════════════════════════════════ -->
-    <section class="slide" id="slide-1" data-title="Portada">
+    <section class="slide" id="slide-1" data-title="Portada" data-title-en="Cover">
       <div class="slide-body" data-center="true">
         <div class="logo-lockup" style="margin-bottom: 4px;">
           <span class="logo" style="width:118px;height:34px;" role="img" aria-label="Clerk">%%CLERK_WORDMARK%%</span>
           <span class="x">×</span>
           <span class="logo" style="width:168px;height:23px;" role="img" aria-label="Crafter Station">%%CRAFTER%%</span>
         </div>
-        <h1 class="pixel-heading lg" data-scramble style="max-width: 21ch;">Agrega auth a tu app en menos de 10 min</h1>
+        <h1 class="pixel-heading lg" data-scramble data-i18n="s1.h" style="max-width: 21ch;">Agrega auth a tu app en menos de 10 min</h1>
         <span class="wordmark">the next craft</span>
         <p class="note">Ignacio Rueda · <span class="bright">@jibaru</span> · Software Engineer @ Clerk</p>
         <p class="ready">READY.<span class="cursor">█</span></p>
@@ -779,11 +780,11 @@ body {
     </section>
 
     <!-- ═══ 02 · QUIÉN SOY ═════════════════════════════════════════════ -->
-    <section class="slide" data-title="Quién soy">
+    <section class="slide" data-title="Quién soy" data-title-en="Who I am">
       <div class="slide-body">
-        <p class="basic-line">10 <b>PRINT "QUIÉN SOY"</b></p>
+        <p class="basic-line" data-i18n="s2.line">10 <b>PRINT "QUIÉN SOY"</b></p>
         <h2 class="pixel-heading" data-scramble>Ignacio Rueda</h2>
-        <p class="lead">Soy software engineer en <span class="inline-mark" aria-hidden="true">%%CLERK_MARK%%</span>Clerk.com, desde Lima, Perú. Me gusta construir cosas con mis amigos de <span class="inline-mark" aria-hidden="true">%%CRAFTER_MARK%%</span>Crafter Station, y ahora estoy creando contenido en mi canal de <span class="inline-mark" aria-hidden="true">%%ICON:youtube%%</span>YouTube.</p>
+        <p class="lead" data-i18n="s2.lead">Soy software engineer en <span class="inline-mark" aria-hidden="true">%%CLERK_MARK%%</span>Clerk.com, desde Lima, Perú. Me gusta construir cosas con mis amigos de <span class="inline-mark" aria-hidden="true">%%CRAFTER_MARK%%</span>Crafter Station, y ahora estoy creando contenido en mi canal de <span class="inline-mark" aria-hidden="true">%%ICON:youtube%%</span>YouTube.</p>
         <div class="grid-table cols-4 fill" style="margin-top:4px;">
           <div class="cell">
             <span class="social-head"><span class="label">Web</span></span>
@@ -806,14 +807,14 @@ body {
     </section>
 
     <!-- ═══ 03 · EL PROBLEMA ═══════════════════════════════════════════ -->
-    <section class="slide" data-title="Auth a mano">
+    <section class="slide" data-title="Auth a mano" data-title-en="Auth by hand">
       <div class="slide-body">
-        <p class="basic-line">20 <b>PRINT "EL PROBLEMA"</b></p>
-        <h2 class="pixel-heading" data-scramble>Auth a mano son semanas</h2>
+        <p class="basic-line" data-i18n="s3.line">20 <b>PRINT "EL PROBLEMA"</b></p>
+        <h2 class="pixel-heading" data-scramble data-i18n="s3.h">Auth a mano son semanas</h2>
         <div class="contrast grid-table cols-2 fill" style="margin-top:2px;">
           <div class="cell contrast-col">
-            <span class="label">A mano</span>
-            <div class="contrast-items">
+            <span class="label" data-i18n="s3.left">A mano</span>
+            <div class="contrast-items" data-i18n="s3.items">
               <div class="contrast-item">Hash de passwords</div>
               <div class="contrast-item">Sesiones y refresh tokens</div>
               <div class="contrast-item">OAuth, proveedor por proveedor</div>
@@ -822,7 +823,7 @@ body {
             </div>
           </div>
           <div class="cell contrast-col" data-strong="true">
-            <span class="label">Con Clerk</span>
+            <span class="label" data-i18n="s3.right">Con Clerk</span>
             <div class="contrast-items">
               <div class="contrast-item literal">npx clerk init</div>
             </div>
@@ -832,17 +833,17 @@ body {
     </section>
 
     <!-- ═══ 04 · QUÉ ES CLERK ══════════════════════════════════════════ -->
-    <section class="slide" data-title="Qué es Clerk">
+    <section class="slide" data-title="Qué es Clerk" data-title-en="What is Clerk">
       <div class="slide-body">
-        <p class="basic-line">30 <b>PRINT "QUÉ ES CLERK"</b></p>
+        <p class="basic-line" data-i18n="s4.line">30 <b>PRINT "QUÉ ES CLERK"</b></p>
         <span class="logo" style="width:210px;height:61px;margin:2px 0;" role="img" aria-label="Clerk">%%CLERK_WORDMARK%%</span>
-        <p class="lead">Autenticación y gestión de usuarios completas. Llegan como <span class="bright">componentes que ya funcionan</span>, no como un SDK que te toca cablear.</p>
-        <div class="stat-row fill" style="margin-top:10px;">
+        <p class="lead" data-i18n="s4.lead">Autenticación y gestión de usuarios completas. Llegan como <span class="bright">componentes que ya funcionan</span>, no como un SDK que te toca cablear.</p>
+        <div class="stat-row fill" data-i18n="s4.stats" style="margin-top:10px;">
           <div class="stat"><span class="v">1</span><span class="l">Componente para tener login</span></div>
           <div class="stat"><span class="v">0</span><span class="l">Tablas que mantener</span></div>
           <div class="stat"><span class="v">50K</span><span class="l">Usuarios retenidos gratis</span></div>
         </div>
-        <a class="linkbar" href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer">
+        <a class="linkbar" href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer" data-i18n="s4.link">
           <span>Y un dashboard de verdad: usuarios, sesiones, organizaciones y logs, sin que construyas un panel de admin.</span>
           <span class="linkbar-url">dashboard.clerk.com &rarr;</span>
         </a>
@@ -850,11 +851,11 @@ body {
     </section>
 
     <!-- ═══ 05 · QUÉ TRAE ══════════════════════════════════════════════ -->
-    <section class="slide" data-title="Qué trae">
+    <section class="slide" data-title="Qué trae" data-title-en="What you get">
       <div class="slide-body">
-        <p class="basic-line">40 <b>PRINT "QUÉ TRAE"</b></p>
-        <h2 class="pixel-heading sm" data-scramble>Todo lo que ibas a escribir a mano</h2>
-        <div class="grid-table cols-3 fill" style="margin-top:2px;">
+        <p class="basic-line" data-i18n="s5.line">40 <b>PRINT "QUÉ TRAE"</b></p>
+        <h2 class="pixel-heading sm" data-scramble data-i18n="s5.h">Todo lo que ibas a escribir a mano</h2>
+        <div class="grid-table cols-3 fill" data-i18n="s5.grid" style="margin-top:2px;">
           <div class="cell">
             <span class="cell-title">Componentes</span>
             <span class="cell-copy">&lt;SignIn /&gt;, &lt;SignUp /&gt; y &lt;UserButton /&gt; con tu marca.</span>
@@ -884,15 +885,15 @@ body {
     </section>
 
     <!-- ═══ 06 · FUNCIONA CON ══════════════════════════════════════════ -->
-    <section class="slide" data-title="Funciona con">
+    <section class="slide" data-title="Funciona con" data-title-en="Works with">
       <div class="slide-body">
-        <p class="basic-line">50 <b>PRINT "FUNCIONA CON"</b></p>
-        <h2 class="pixel-heading sm" data-scramble>Tu stack ya tiene soporte</h2>
+        <p class="basic-line" data-i18n="s6.line">50 <b>PRINT "FUNCIONA CON"</b></p>
+        <h2 class="pixel-heading sm" data-scramble data-i18n="s6.h">Tu stack ya tiene soporte</h2>
         <div class="grid-table cols-4 fill" style="margin-top:2px;">
           <div class="cell fw">
             <span class="fw-mark" role="img" aria-label="Next.js">%%ICON:nextdotjs%%</span>
             <span class="cell-value">Next.js</span>
-            <span class="label">El quickstart de hoy</span>
+            <span class="label" data-i18n="s6.badge">El quickstart de hoy</span>
           </div>
           <div class="cell fw">
             <span class="fw-mark" role="img" aria-label="React">%%ICON:react%%</span>
@@ -939,19 +940,19 @@ body {
             <span class="cell-value">Fastify</span>
           </div>
         </div>
-        <p class="note">Todos salen del mismo comando.</p>
+        <p class="note" data-i18n="s6.note">Todos salen del mismo comando.</p>
       </div>
     </section>
 
     <!-- ═══ 07 · CLERK CLI ═════════════════════════════════════════════ -->
-    <section class="slide" data-title="Clerk CLI">
+    <section class="slide" data-title="Clerk CLI" data-title-en="Clerk CLI">
       <div class="slide-body">
-        <p class="basic-line">60 <b>PRINT "CLERK CLI"</b></p>
+        <p class="basic-line" data-i18n="s7.line">60 <b>PRINT "CLERK CLI"</b></p>
         <h2 class="pixel-heading" data-scramble>Clerk CLI</h2>
-        <p class="lead">Toda tu cuenta de Clerk desde la terminal. Tú la manejas, y tu agente también.</p>
+        <p class="lead" data-i18n="s7.lead">Toda tu cuenta de Clerk desde la terminal. Tú la manejas, y tu agente también.</p>
         <div class="terminal fill" style="margin-top:4px;">
-          <div class="terminal-bar"><span>Instalar</span><span>bash</span></div>
-          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npm install -g clerk</span>
+          <div class="terminal-bar" data-i18n="s7.bar"><span>Instalar</span><span>bash</span></div>
+          <div class="terminal-body lg" data-i18n="s7.body"><span class="prompt">$ </span><span class="cmd">npm install -g clerk</span>
 
 <span class="comment"># o sin instalar nada</span>
 <span class="prompt">$ </span><span class="cmd">npx clerk</span>   <span class="comment">·</span>   <span class="prompt">$ </span><span class="cmd">bunx clerk</span></div>
@@ -960,18 +961,18 @@ body {
     </section>
 
     <!-- ═══ 08 · CLERK INIT ════════════════════════════════════════════ -->
-    <section class="slide" data-title="clerk init">
+    <section class="slide" data-title="clerk init" data-title-en="clerk init">
       <div class="slide-body">
-        <p class="basic-line">70 <b>PRINT "UN SOLO COMANDO"</b></p>
+        <p class="basic-line" data-i18n="s8.line">70 <b>PRINT "UN SOLO COMANDO"</b></p>
         <div class="terminal fill">
-          <div class="terminal-bar"><span>Proyecto</span><span>~/mi-app</span></div>
-          <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npx clerk init</span>
+          <div class="terminal-bar" data-i18n="s8.bar"><span>Proyecto</span><span>~/mi-app</span></div>
+          <div class="terminal-body lg" data-i18n="s8.body"><span class="prompt">$ </span><span class="cmd">npx clerk init</span>
 <span class="out">✓ Next.js detectado · bun</span>
 <span class="out">✓ @clerk/nextjs instalado</span>
 <span class="out">✓ Middleware y &lt;ClerkProvider /&gt; listos</span>
 <span class="ok">✓ Keys escritas en .env.local</span></div>
         </div>
-        <div class="flow" style="margin-top:2px;">
+        <div class="flow" data-i18n="s8.flow" style="margin-top:2px;">
           <div class="flow-step">
             <span class="num">01</span>
             <div style="display:flex;flex-direction:column;gap:7px;">
@@ -1000,11 +1001,11 @@ body {
     </section>
 
     <!-- ═══ 09 · COMANDOS ══════════════════════════════════════════════ -->
-    <section class="slide" data-title="Comandos">
+    <section class="slide" data-title="Comandos" data-title-en="Commands">
       <div class="slide-body">
-        <p class="basic-line">80 <b>PRINT "COMANDOS"</b></p>
-        <h2 class="pixel-heading sm" data-scramble>Los que vas a usar</h2>
-        <div class="grid-table cols-2 fill" style="margin-top:2px;">
+        <p class="basic-line" data-i18n="s9.line">80 <b>PRINT "COMANDOS"</b></p>
+        <h2 class="pixel-heading sm" data-scramble data-i18n="s9.h">Los que vas a usar</h2>
+        <div class="grid-table cols-2 fill" data-i18n="s9.grid" style="margin-top:2px;">
           <div class="cell"><span class="cell-value bright">clerk auth login</span><span class="cell-copy">Entra a tu cuenta.</span></div>
           <div class="cell"><span class="cell-value bright">clerk init</span><span class="cell-copy">Configura Clerk en el proyecto.</span></div>
           <div class="cell"><span class="cell-value bright">clerk env pull</span><span class="cell-copy">Baja las keys a .env.local.</span></div>
@@ -1012,18 +1013,18 @@ body {
           <div class="cell"><span class="cell-value bright">clerk doctor</span><span class="cell-copy">Revisa que tu integración esté sana.</span></div>
           <div class="cell"><span class="cell-value bright">clerk deploy</span><span class="cell-copy">Pasa la app a producción.</span></div>
         </div>
-        <p class="note" style="margin-top:2px;">Y cuando compile lento: <span class="bright">clerk bird</span> — Flappy Bird en la terminal.</p>
+        <p class="note" data-i18n="s9.note" style="margin-top:2px;">Y cuando compile lento: <span class="bright">clerk bird</span> — Flappy Bird en la terminal.</p>
       </div>
     </section>
 
     <!-- ═══ 10 · CLERK SKILLS ══════════════════════════════════════════ -->
-    <section class="slide" data-title="Clerk Skills">
+    <section class="slide" data-title="Clerk Skills" data-title-en="Clerk Skills">
       <div class="slide-body">
-        <p class="basic-line">90 <b>PRINT "CLERK SKILLS"</b></p>
+        <p class="basic-line" data-i18n="s10.line">90 <b>PRINT "CLERK SKILLS"</b></p>
         <h2 class="pixel-heading" data-scramble>Clerk Skills</h2>
-        <p class="lead">Tu agente deja de adivinar cómo se usa Clerk. Las skills le dan los patrones oficiales, escritos por quienes hacen el producto.</p>
+        <p class="lead" data-i18n="s10.lead">Tu agente deja de adivinar cómo se usa Clerk. Las skills le dan los patrones oficiales, escritos por quienes hacen el producto.</p>
         <div class="terminal fill" style="margin-top:4px;">
-          <div class="terminal-bar"><span>Instalar las skills</span><span>bash</span></div>
+          <div class="terminal-bar" data-i18n="s10.bar"><span>Instalar las skills</span><span>bash</span></div>
           <div class="terminal-body lg"><span class="prompt">$ </span><span class="cmd">npx skills add clerk/skills</span></div>
         </div>
         <p class="note">Claude Code · Cursor · Windsurf · Copilot · Codex · Gemini CLI</p>
@@ -1031,11 +1032,11 @@ body {
     </section>
 
     <!-- ═══ 11 · LAS SKILLS ════════════════════════════════════════════ -->
-    <section class="slide" data-title="Las skills">
+    <section class="slide" data-title="Las skills" data-title-en="The skills">
       <div class="slide-body">
-        <p class="basic-line">100 <b>PRINT "EL CATÁLOGO"</b></p>
-        <h2 class="pixel-heading sm" data-scramble>Una skill por trabajo</h2>
-        <div class="grid-table cols-3 fill" style="margin-top:2px;">
+        <p class="basic-line" data-i18n="s11.line">100 <b>PRINT "EL CATÁLOGO"</b></p>
+        <h2 class="pixel-heading sm" data-scramble data-i18n="s11.h">Una skill por trabajo</h2>
+        <div class="grid-table cols-3 fill" data-i18n="s11.grid" style="margin-top:2px;">
           <div class="cell"><span class="cell-value bright">/clerk</span><span class="cell-copy">Enruta al resto.</span></div>
           <div class="cell"><span class="cell-value bright">/clerk-setup</span><span class="cell-copy">Clerk en cualquier framework.</span></div>
           <div class="cell"><span class="cell-value bright">/clerk-cli</span><span class="cell-copy">Maneja Clerk desde la terminal.</span></div>
@@ -1046,16 +1047,16 @@ body {
           <div class="cell"><span class="cell-value bright">/clerk-testing</span><span class="cell-copy">E2E de los flujos de auth.</span></div>
           <div class="cell"><span class="cell-value bright">/clerk-nextjs-patterns</span><span class="cell-copy">Middleware, Server Actions, caché.</span></div>
         </div>
-        <p class="note" style="margin-top:2px;">Más las de cada plataforma: React, TanStack, Astro, Nuxt, Vue, Expo, Swift y Android.</p>
+        <p class="note" data-i18n="s11.note" style="margin-top:2px;">Más las de cada plataforma: React, TanStack, Astro, Nuxt, Vue, Expo, Swift y Android.</p>
       </div>
     </section>
 
     <!-- ═══ 12 · LA DEMO ═══════════════════════════════════════════════ -->
-    <section class="slide" data-title="Los 10 minutos">
+    <section class="slide" data-title="Los 10 minutos" data-title-en="The 10 minutes">
       <div class="slide-body">
-        <p class="basic-line">110 <b>PRINT "LOS 10 MINUTOS"</b></p>
-        <h2 class="pixel-heading sm" data-scramble>De cero a login, en vivo</h2>
-        <ul class="timeline fill" style="margin-top:2px;">
+        <p class="basic-line" data-i18n="s12.line">110 <b>PRINT "LOS 10 MINUTOS"</b></p>
+        <h2 class="pixel-heading sm" data-scramble data-i18n="s12.h">De cero a login, en vivo</h2>
+        <ul class="timeline fill" data-i18n="s12.timeline" style="margin-top:2px;">
           <li><span class="t">00:00</span><span>npx clerk init sobre un Next.js recién creado</span></li>
           <li><span class="t">02:00</span><span>Levantar el server y ver &lt;SignIn /&gt; ya funcionando</span></li>
           <li><span class="t">04:00</span><span>Poner &lt;UserButton /&gt; en el header</span></li>
@@ -1067,10 +1068,10 @@ body {
     </section>
 
     <!-- ═══ 13 · CIERRE ════════════════════════════════════════════════ -->
-    <section class="slide" data-title="Cierre">
+    <section class="slide" data-title="Cierre" data-title-en="Close">
       <div class="slide-body" data-center="true">
-        <h2 class="pixel-heading lg" data-scramble style="max-width: 20ch;">Deja de escribir auth y ponte a shippear</h2>
-        <p class="lead" style="text-align:center;">El siguiente paso es <span class="bright">npx clerk init</span> en el proyecto que tienes abierto ahora.</p>
+        <h2 class="pixel-heading lg" data-scramble data-i18n="s13.h" style="max-width: 20ch;">Deja de escribir auth y ponte a shippear</h2>
+        <p class="lead" data-i18n="s13.lead" style="text-align:center;">El siguiente paso es <span class="bright">npx clerk init</span> en el proyecto que tienes abierto ahora.</p>
         <span class="wordmark">the next craft</span>
         <p class="note">clerk.com/docs · jibaru.dev</p>
         <p class="ready">READY.<span class="cursor">█</span></p>
@@ -1082,8 +1083,11 @@ body {
 
 <div class="chrome">
   <div class="topbar">
-    <span class="deck-title">Agrega auth a tu app en menos de 10 min — Clerk × The Next Craft</span>
-    <button type="button" class="keycap" id="btn-index" aria-expanded="false" aria-controls="index">Index</button>
+    <span class="deck-title" data-i18n="chrome.title">Agrega auth a tu app en menos de 10 min — Clerk × The Next Craft</span>
+    <span class="topbar-right">
+      <button type="button" class="keycap keycap-ghost" id="btn-lang" aria-label="Switch to English">EN</button>
+      <button type="button" class="keycap" id="btn-index" aria-expanded="false" aria-controls="index">Index</button>
+    </span>
   </div>
   <div class="botbar">
     <span class="counter">
@@ -1196,13 +1200,115 @@ body {
     if (h) scramble(h);
   }
 
+
+  /* ── Idioma: el espanol vive en el HTML, el ingles en este diccionario ── */
+
+  var EN = {
+    "s1.h": "Add auth to your app in under 10 min",
+    "s2.line": "10 <b>PRINT \"WHO I AM\"</b>",
+    "s2.lead": "I am a software engineer at {{m0}}Clerk.com based in Lima, Peru. I like to build things with my friends at {{m1}}Crafter Station, and currently creating content on my {{m2}}YouTube channel.",
+    "s3.line": "20 <b>PRINT \"THE PROBLEM\"</b>",
+    "s3.h": "Auth by hand takes weeks",
+    "s3.left": "By hand",
+    "s3.right": "With Clerk",
+    "s3.items": "<div class=\"contrast-item\">Password hashing</div><div class=\"contrast-item\">Sessions and refresh tokens</div><div class=\"contrast-item\">OAuth, provider by provider</div><div class=\"contrast-item\">MFA, reset, magic links</div><div class=\"contrast-item\">A panel to see your users</div>",
+    "s4.line": "30 <b>PRINT \"WHAT IS CLERK\"</b>",
+    "s4.lead": "Complete authentication and user management. It ships as <span class=\"bright\">components that already work</span>, not an SDK you have to wire up.",
+    "s4.stats": "<div class=\"stat\"><span class=\"v\">1</span><span class=\"l\">Component to have login</span></div><div class=\"stat\"><span class=\"v\">0</span><span class=\"l\">User tables to maintain</span></div><div class=\"stat\"><span class=\"v\">50K</span><span class=\"l\">Retained users free</span></div>",
+    "s4.link": "<span>And a real dashboard: users, sessions, organizations and logs, without you building an admin panel.</span><span class=\"linkbar-url\">dashboard.clerk.com &rarr;</span>",
+    "s5.line": "40 <b>PRINT \"WHAT YOU GET\"</b>",
+    "s5.h": "Everything you were going to write by hand",
+    "s5.grid": "<div class=\"cell\"><span class=\"cell-title\">Components</span><span class=\"cell-copy\">&lt;SignIn /&gt;, &lt;SignUp /&gt; and &lt;UserButton /&gt; in your brand.</span></div><div class=\"cell\"><span class=\"cell-title\">Organizations</span><span class=\"cell-copy\">Multi-tenant B2B: teams, roles and invites.</span></div><div class=\"cell\"><span class=\"cell-title\">Billing</span><span class=\"cell-copy\">Subscriptions and features gated by plan.</span></div><div class=\"cell\"><span class=\"cell-title\">Security</span><span class=\"cell-copy\">MFA, passkeys and bot detection by default.</span></div><div class=\"cell\"><span class=\"cell-title\">SSO</span><span class=\"cell-copy\">Google, GitHub and SAML for enterprise.</span></div><div class=\"cell\"><span class=\"cell-title\">Webhooks</span><span class=\"cell-copy\">Every user event, straight to your database.</span></div>",
+    "s6.line": "50 <b>PRINT \"WORKS WITH\"</b>",
+    "s6.h": "Your stack is already supported",
+    "s6.badge": "Today's quickstart",
+    "s6.note": "They all come from the same command.",
+    "s7.line": "60 <b>PRINT \"CLERK CLI\"</b>",
+    "s7.lead": "Your whole Clerk account from the terminal. You drive it, and so does your agent.",
+    "s7.bar": "<span>Install</span><span>bash</span>",
+    "s7.body": "<span class=\"prompt\">$ </span><span class=\"cmd\">npm install -g clerk</span>\n\n<span class=\"comment\"># or without installing anything</span>\n<span class=\"prompt\">$ </span><span class=\"cmd\">npx clerk</span>   <span class=\"comment\">·</span>   <span class=\"prompt\">$ </span><span class=\"cmd\">bunx clerk</span>",
+    "s8.line": "70 <b>PRINT \"ONE COMMAND\"</b>",
+    "s8.bar": "<span>Project</span><span>~/my-app</span>",
+    "s8.body": "<span class=\"prompt\">$ </span><span class=\"cmd\">npx clerk init</span>\n<span class=\"out\">✓ Next.js detected · bun</span>\n<span class=\"out\">✓ @clerk/nextjs installed</span>\n<span class=\"out\">✓ Middleware and &lt;ClerkProvider /&gt; ready</span>\n<span class=\"ok\">✓ Keys written to .env.local</span>",
+    "s8.flow": "<div class=\"flow-step\"><span class=\"num\">01</span><div style=\"display:flex;flex-direction:column;gap:7px;\"><span class=\"cell-title\">Detects</span><span class=\"cell-copy\">Your framework and package manager.</span></div><span class=\"arrow\" aria-hidden=\"true\">&gt;</span></div><div class=\"flow-step\"><span class=\"num\">02</span><div style=\"display:flex;flex-direction:column;gap:7px;\"><span class=\"cell-title\">Installs</span><span class=\"cell-copy\">SDK, middleware and auth pages.</span></div><span class=\"arrow\" aria-hidden=\"true\">&gt;</span></div><div class=\"flow-step\"><span class=\"num\">03</span><div style=\"display:flex;flex-direction:column;gap:7px;\"><span class=\"cell-title\">Connects</span><span class=\"cell-copy\">Links your app and pulls the keys.</span></div></div>",
+    "s9.line": "80 <b>PRINT \"COMMANDS\"</b>",
+    "s9.h": "The ones you will actually use",
+    "s9.grid": "<div class=\"cell\"><span class=\"cell-value bright\">clerk auth login</span><span class=\"cell-copy\">Sign in to your account.</span></div><div class=\"cell\"><span class=\"cell-value bright\">clerk init</span><span class=\"cell-copy\">Set Clerk up in the project.</span></div><div class=\"cell\"><span class=\"cell-value bright\">clerk env pull</span><span class=\"cell-copy\">Pull the keys into .env.local.</span></div><div class=\"cell\"><span class=\"cell-value bright\">clerk users</span><span class=\"cell-copy\">Create, list and delete users.</span></div><div class=\"cell\"><span class=\"cell-value bright\">clerk doctor</span><span class=\"cell-copy\">Check your integration is healthy.</span></div><div class=\"cell\"><span class=\"cell-value bright\">clerk deploy</span><span class=\"cell-copy\">Ship the app to production.</span></div>",
+    "s9.note": "And when the build is slow: <span class=\"bright\">clerk bird</span> — Flappy Bird in your terminal.",
+    "s10.line": "90 <b>PRINT \"CLERK SKILLS\"</b>",
+    "s10.lead": "Your agent stops guessing how Clerk works. Skills give it the official patterns, written by the people who build it.",
+    "s10.bar": "<span>Install the skills</span><span>bash</span>",
+    "s11.line": "100 <b>PRINT \"THE CATALOG\"</b>",
+    "s11.h": "One skill per job",
+    "s11.grid": "<div class=\"cell\"><span class=\"cell-value bright\">/clerk</span><span class=\"cell-copy\">Routes to the rest.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-setup</span><span class=\"cell-copy\">Clerk in any framework.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-cli</span><span class=\"cell-copy\">Drive Clerk from the terminal.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-custom-ui</span><span class=\"cell-copy\">Your own flows and styling.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-orgs</span><span class=\"cell-copy\">Multi-tenant B2B.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-billing</span><span class=\"cell-copy\">Subscriptions and feature gating.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-webhooks</span><span class=\"cell-copy\">Real-time events.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-testing</span><span class=\"cell-copy\">E2E for auth flows.</span></div><div class=\"cell\"><span class=\"cell-value bright\">/clerk-nextjs-patterns</span><span class=\"cell-copy\">Middleware, Server Actions, caching.</span></div>",
+    "s11.note": "Plus one per platform: React, TanStack, Astro, Nuxt, Vue, Expo, Swift and Android.",
+    "s12.line": "110 <b>PRINT \"THE 10 MINUTES\"</b>",
+    "s12.h": "From zero to login, live",
+    "s12.timeline": "<li><span class=\"t\">00:00</span><span>npx clerk init on a fresh Next.js app</span></li><li><span class=\"t\">02:00</span><span>Start the server and see &lt;SignIn /&gt; already working</span></li><li><span class=\"t\">04:00</span><span>Drop &lt;UserButton /&gt; into the header</span></li><li><span class=\"t\">06:00</span><span>Protect /dashboard with auth() in the middleware</span></li><li><span class=\"t\">08:00</span><span>Ask the skill to add Organizations</span></li><li><span class=\"t\">10:00</span><span class=\"bright\">clerk doctor · all green</span></li>",
+    "s13.h": "Stop writing auth and start shipping",
+    "s13.lead": "The next step is <span class=\"bright\">npx clerk init</span> in the project you have open right now.",
+    "chrome.title": "Add auth to your app in under 10 min — Clerk × The Next Craft"
+  };
+
+  var lang = "es";
+  var i18nNodes = Array.prototype.slice.call(
+    document.querySelectorAll("[data-i18n]")
+  );
+
+  // Foto del espanol antes de tocar nada, y de las marcas inline que lleve
+  // dentro: los SVG no se repiten en el diccionario, se reinsertan por
+  // posicion via {{m0}}, {{m1}}...
+  i18nNodes.forEach(function (el) {
+    el._es = el.innerHTML;
+    el._marks = Array.prototype.map.call(
+      el.querySelectorAll(".inline-mark"),
+      function (m) { return m.outerHTML; }
+    );
+  });
+
+  function withMarks(el, html) {
+    return html.replace(/\{\{m(\d)\}\}/g, function (_, i) {
+      return el._marks[Number(i)] || "";
+    });
+  }
+
+  var btnLang = document.getElementById("btn-lang");
+
+  function setLang(next, rerender) {
+    lang = next === "en" ? "en" : "es";
+    document.documentElement.lang = lang;
+
+    i18nNodes.forEach(function (el) {
+      var key = el.getAttribute("data-i18n");
+      var html = lang === "en" && EN[key] ? withMarks(el, EN[key]) : el._es;
+      if (el.innerHTML !== html) el.innerHTML = html;
+      // El scramble cachea el texto en data-text; si no se limpia, al
+      // cambiar de idioma se redibuja la frase anterior.
+      if (el.hasAttribute("data-scramble")) el.removeAttribute("data-text");
+    });
+
+    btnLang.textContent = lang === "en" ? "ES" : "EN";
+    btnLang.setAttribute(
+      "aria-label",
+      lang === "en" ? "Cambiar a espanol" : "Switch to English"
+    );
+
+    buildIndex();
+    if (rerender) { render(); syncUrl(); }
+  }
+
+  btnLang.addEventListener("click", function () {
+    setLang(lang === "en" ? "es" : "en", true);
+  });
+
   /* ── La URL sigue a la diapositiva (?slide=N, 1-based) ───────────────── */
 
   // replaceState y no pushState: con 13 diapositivas, pushState obligaria a
   // pulsar "atras" trece veces para salir del deck.
   function syncUrl() {
     try {
-      var url = location.pathname + "?slide=" + (active + 1) + location.hash;
+      var url = location.pathname + "?slide=" + (active + 1) +
+        (lang === "en" ? "&lang=en" : "") + location.hash;
       history.replaceState({ slide: active }, "", url);
     } catch (err) {
       // file:// y algunos iframes bloquean replaceState: la navegacion
@@ -1228,6 +1334,8 @@ body {
 
   // Por si alguien edita la URL a mano o usa atras/adelante
   window.addEventListener("popstate", function () {
+    var urlLang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "es";
+    if (urlLang !== lang) setLang(urlLang, false);
     var i = slideFromUrl();
     if (i !== null && i !== active) { active = i; render(); }
   });
@@ -1240,18 +1348,30 @@ body {
   var indexList = document.getElementById("index-list");
   var btnIndex = document.getElementById("btn-index");
 
-  slides.forEach(function (s, i) {
-    var li = document.createElement("li");
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "index-btn";
-    b.innerHTML =
-      '<span class="index-num">' + pad2(i + 1) + "</span>" +
-      '<span>' + (s.getAttribute("data-title") || "Slide") + "</span>";
-    b.addEventListener("click", function () { goTo(i); setIndex(false); });
-    li.appendChild(b);
-    indexList.appendChild(li);
-  });
+  // Se reconstruye al cambiar de idioma: los titulos viven en data-title /
+  // data-title-en de cada <section>.
+  function buildIndex() {
+    indexList.innerHTML = "";
+    slides.forEach(function (s, i) {
+      var title =
+        (lang === "en" && s.getAttribute("data-title-en")) ||
+        s.getAttribute("data-title") ||
+        "Slide";
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "index-btn";
+      if (i === active) b.setAttribute("aria-current", "true");
+      b.innerHTML =
+        '<span class="index-num">' + pad2(i + 1) + "</span>" +
+        "<span></span>";
+      b.lastChild.textContent = title;
+      b.addEventListener("click", function () { goTo(i); setIndex(false); });
+      li.appendChild(b);
+      indexList.appendChild(li);
+    });
+  }
+  buildIndex();
 
   function setIndex(open) {
     index.hidden = !open;
@@ -1362,6 +1482,8 @@ body {
   // principio: en ese caso el boot sobra.
   var deepLink = slideFromUrl();
   if (deepLink !== null) active = deepLink;
+
+  setLang(new URLSearchParams(location.search).get("lang"), false);
 
   if (reduced || booted || deepLink !== null) {
     boot.hidden = true;
