@@ -20,10 +20,15 @@ ASSETS = ROOT / "assets"
 BRAND_FILLS = ("white", "#fff", "#FFF", "#ffffff", "#000", "#F8BB2D")
 
 
-def load_svg(name: str, keep: range | None = None) -> str:
+def load_svg(
+    name: str, keep: range | None = None, viewbox: str | None = None
+) -> str:
     """Devuelve el <svg> listo para inlinear.
 
-    keep: índices de <path> a conservar (para recortar un logo compuesto).
+    keep:    índices de <path> a conservar (para recortar un logo compuesto).
+    viewbox: reencuadre. Al quedarte solo con el glifo de un logotipo, el
+             viewBox original sigue reservando el ancho del texto que quitaste
+             y la marca sale diminuta y descentrada.
     """
     svg = (ASSETS / name).read_text(encoding="utf-8").strip()
 
@@ -31,6 +36,9 @@ def load_svg(name: str, keep: range | None = None) -> str:
         head = svg[: svg.index(">") + 1]
         paths = re.findall(r"<path\b[^>]*?/>", svg)
         svg = head + "".join(paths[i] for i in keep) + "</svg>"
+
+    if viewbox is not None:
+        svg = re.sub(r'viewBox="[^"]*"', f'viewBox="{viewbox}"', svg, count=1)
 
     # Que herede el color del contenedor en vez de imponer el de marca.
     for fill in BRAND_FILLS:
@@ -74,8 +82,13 @@ def build() -> None:
     # viewBox de 441×128. El lockup de portada usa el logo completo.
     parts = {
         "%%CLERK_WORDMARK%%": load_svg("clerk-logo.svg"),
-        "%%CLERK_MARK%%": load_svg("clerk-logo.svg", keep=range(5, 8)),
+        "%%CLERK_MARK%%": load_svg(
+            "clerk-logo.svg", keep=range(5, 8), viewbox="0 0 128 128"
+        ),
         "%%CRAFTER%%": load_svg("crafter-logo.svg"),
+        "%%CRAFTER_MARK%%": load_svg(
+            "crafter-logo.svg", keep=range(0, 1), viewbox="0 0 90 90"
+        ),
         "%%NEXT%%": load_svg("next-logo.svg"),
     }
 

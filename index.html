@@ -238,6 +238,22 @@ body {
 .cursor { animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
+/* Marca embebida en una frase: se alinea al texto y hereda su tamaño */
+.inline-mark {
+  display: inline-block;
+  width: 0.92em;
+  height: 0.92em;
+  vertical-align: -0.11em;
+  margin-right: 0.18em;
+  color: var(--bright);
+}
+.inline-mark svg { display: block; width: 100%; height: 100%; }
+
+/* Fila de enlaces: icono + plataforma arriba, handle abajo */
+.social-head { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.social-mark { display: block; width: 19px; height: 19px; color: var(--text-dim); }
+.social-mark svg { display: block; width: 100%; height: 100%; }
+
 /* ─── Retícula compartida de 1px (tablas fusionadas) ──────────────────── */
 
 .grid-table {
@@ -772,17 +788,24 @@ body {
       <div class="slide-body">
         <p class="basic-line">10 <b>PRINT "QUIÉN SOY"</b></p>
         <h2 class="pixel-heading" data-scramble>Ignacio Rueda</h2>
-        <p class="lead">Le meto código a <span class="bright">Clerk</span> desde Lima. Construyo con <span class="bright">Crafter Station</span> y grabo lo que aprendo.</p>
+        <p class="lead">Soy software engineer en <span class="inline-mark" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M99.5716 10.788C101.571 12.1272 101.742 14.9444 100.04 16.646L85.4244 31.2618C84.1035 32.5828 82.0542 32.7914 80.3915 31.9397C75.4752 29.421 69.9035 28 64 28C44.1177 28 28 44.1177 28 64C28 69.9035 29.421 75.4752 31.9397 80.3915C32.7914 82.0542 32.5828 84.1035 31.2618 85.4244L16.646 100.04C14.9444 101.742 12.1272 101.571 10.788 99.5716C3.97411 89.3989 0 77.1635 0 64C0 28.6538 28.6538 0 64 0C77.1635 0 89.3989 3.97411 99.5716 10.788Z" fill="currentColor" fill-opacity="0.4"/><path d="M84 64C84 75.0457 75.0457 84 64 84C52.9543 84 44 75.0457 44 64C44 52.9543 52.9543 44 64 44C75.0457 44 84 52.9543 84 64Z" fill="currentColor"/><path d="M100.04 111.354C101.742 113.056 101.571 115.873 99.5717 117.212C89.3989 124.026 77.1636 128 64 128C50.8364 128 38.6011 124.026 28.4283 117.212C26.4289 115.873 26.2581 113.056 27.9597 111.354L42.5755 96.7382C43.8965 95.4172 45.9457 95.2085 47.6084 96.0603C52.5248 98.579 58.0964 100 64 100C69.9036 100 75.4753 98.579 80.3916 96.0603C82.0543 95.2085 84.1036 95.4172 85.4245 96.7382L100.04 111.354Z" fill="currentColor"/></svg></span>Clerk.com, desde Lima, Perú. Me gusta construir cosas con mis amigos de <span class="inline-mark" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M34.7718 13.6653C32.7175 12.2339 29.2082 10.55 26.8971 9.87636C21.6759 8.27657 17.5551 9.17712 14.8283 10.129C9.52151 11.9813 6.18334 14.4231 3.18755 18.8857C-1.52013 25.79 -0.835381 36.9885 4.89943 43.3035C6.18334 44.8191 6.86809 44.5665 11.8326 40.9459C12.0037 40.7775 11.319 39.6829 10.2919 38.4199C7.98082 35.5571 6.61131 30.3368 7.29606 27.3898C9.52151 18.1279 20.9055 13.1601 28.2666 18.2121C29.8929 19.3067 35.0286 23.8534 39.6506 28.316C46.5838 34.8835 48.638 36.3991 50.3499 36.2307C52.0618 36.0623 52.6609 35.4729 52.8321 33.6206C53.0889 31.5998 52.3186 30.421 48.3812 26.8846C45.7278 24.4428 43.588 22.2537 43.588 21.8327C43.588 21.4959 45.3854 20.0645 47.6109 18.7173C61.9907 9.70797 77.4832 27.6424 65.5001 39.4303C63.9594 40.9459 61.2204 42.5457 59.4229 43.0509C57.3686 43.5561 47.8677 43.9771 36.0557 43.9771C13.9724 43.9771 12.7741 44.2297 6.95368 49.3658C-0.493008 56.0176 -2.20489 67.3845 3.01635 75.636C9.77829 86.4135 24.3293 89.1079 34.6006 81.4458L38.3667 78.583L42.732 81.4458C49.8363 86.1609 55.5712 87.0871 62.5043 84.8137C76.3705 80.1828 81.5062 62.8377 72.5188 51.2182C71.4917 49.9552 70.9781 49.871 69.6086 50.5446C65.4145 52.9022 65.5001 52.7338 67.9823 57.7858C69.8654 61.6589 70.2077 63.1745 69.7798 66.1215C68.5815 73.531 62.9322 78.4988 55.7423 78.4988C50.1787 78.4988 48.3812 77.4042 38.11 67.5529C32.7175 62.5009 27.7531 58.291 27.0683 58.291C25.7844 58.291 23.0454 60.9011 23.0454 62.1641C23.0454 62.5009 25.3564 65.1953 28.2666 68.0581L33.4879 73.1942L30.4065 75.5518C19.536 83.7191 4.04349 73.952 7.63844 61.1537C8.75116 57.2806 12.6885 52.9864 16.4546 51.6392C17.9097 51.0498 26.8971 50.713 39.0515 50.713C61.3915 50.713 64.045 50.292 69.1806 45.9137C84.502 33.1154 75.6002 9.03437 55.5711 9.11857C49.7507 9.11857 46.5838 10.2974 41.1913 14.2547L38.4523 16.2755L34.7718 13.6653Z" fill="currentColor"/></svg></span>Crafter Station, y ahora estoy creando contenido en mi canal de <span class="inline-mark" aria-hidden="true"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></span>YouTube.</p>
         <div class="grid-table cols-4 fill" style="margin-top:4px;">
-          <div class="cell"><span class="label">Rol</span><span class="cell-value">Software Engineer<br>@ Clerk</span></div>
-          <div class="cell"><span class="label">Comunidad</span><span class="cell-value">Crafter Station</span></div>
-          <div class="cell"><span class="label">Base</span><span class="cell-value">Lima, Perú</span></div>
-          <div class="cell"><span class="label">Web</span><span class="cell-value bright">jibaru.dev</span></div>
-        </div>
-        <div class="chips" style="margin-top:2px;">
-          <span class="chip muted">X · @IgnacioRuedaB</span>
-          <span class="chip muted">GitHub · jibaru</span>
-          <span class="chip muted">YouTube · @ignacio-rueda</span>
+          <div class="cell">
+            <span class="social-head"><span class="label">Web</span></span>
+            <span class="cell-value bright">jibaru.dev</span>
+          </div>
+          <div class="cell">
+            <span class="social-head"><span class="social-mark" aria-hidden="true"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span><span class="label">GitHub</span></span>
+            <span class="cell-value">jibaru</span>
+          </div>
+          <div class="cell">
+            <span class="social-head"><span class="social-mark" aria-hidden="true"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg></span><span class="label">X</span></span>
+            <span class="cell-value">@IgnacioRuedaB</span>
+          </div>
+          <div class="cell">
+            <span class="social-head"><span class="social-mark" aria-hidden="true"><svg fill="currentColor" aria-hidden="true"  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></span><span class="label">YouTube</span></span>
+            <span class="cell-value">@ignacio-rueda</span>
+          </div>
         </div>
       </div>
     </section>
