@@ -110,7 +110,10 @@ Convenciones que conviene respetar:
 index.html           # el entregable: un solo archivo, autocontenido
 build.py             # inlinea los SVG en la plantilla
 src/template.html    # el contenido y los estilos (acá se edita)
+tools/
+  make-favicon.py    # regenera el favicon desde un mapa ASCII
 assets/
+  favicon.svg        # candado en pixel-art (generado)
   clerk-logo.svg     # logo oficial de Clerk
   crafter-logo.svg   # logotipo de Crafter Station
   next-logo.svg      # wordmark de Next.js
@@ -133,3 +136,17 @@ tarifa antigua.
   (CC0 1.0), en `assets/icons/`.
 - **Logos de marca** — Clerk, Crafter Station y Next.js son marcas de sus
   respectivos dueños; se usan aquí solo con fines de identificación.
+
+## Favicon
+
+Un candado en pixel-art dibujado sobre la retícula de 16×16 del C64: el tema
+del deck (auth) en el lenguaje visual del evento. Va incrustado como data URI,
+así que `index.html` sigue siendo un solo archivo.
+
+Se edita como dibujo, no como SVG — el mapa ASCII está en
+`tools/make-favicon.py`:
+
+```bash
+python tools/make-favicon.py   # -> assets/favicon.svg
+python build.py                # -> lo incrusta en index.html
+```

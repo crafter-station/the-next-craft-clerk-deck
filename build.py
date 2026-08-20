@@ -11,6 +11,7 @@ Uso:  python build.py
 
 import re
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).parent
 ASSETS = ROOT / "assets"
@@ -49,6 +50,17 @@ def load_svg(
     svg = svg.replace("<svg", '<svg aria-hidden="true" focusable="false"', 1)
 
     return svg
+
+
+def favicon_data_uri() -> str:
+    """El favicon como data URI, para que deck e icono sigan siendo un archivo.
+
+    Percent-encoding y no base64: pesa menos y el SVG queda legible dentro
+    del HTML. Hay que escapar '#' si o si, o el navegador lo lee como
+    fragmento y corta la URL en el primer color.
+    """
+    svg = (ASSETS / "favicon.svg").read_text(encoding="utf-8").strip()
+    return "data:image/svg+xml," + quote(svg, safe="/:;=,()")
 
 
 def load_icon(slug: str) -> str:
@@ -90,6 +102,7 @@ def build() -> None:
             "crafter-logo.svg", keep=range(0, 1), viewbox="0 0 90 90"
         ),
         "%%NEXT%%": load_svg("next-logo.svg"),
+        "%%FAVICON%%": favicon_data_uri(),
     }
 
     for token, svg in parts.items():
