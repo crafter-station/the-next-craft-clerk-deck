@@ -9,7 +9,7 @@ vintage, tipografía pixel PETSCII y `READY.█`.
 
 ## Presentar
 
-Abre `deck.html` en el navegador. No necesita servidor ni build: es un solo
+Abre `index.html` en el navegador. No necesita servidor ni build: es un solo
 archivo con todo dentro (las únicas peticiones externas son las fuentes de
 Google).
 
@@ -34,11 +34,11 @@ fondo activados. Cada diapositiva sale como una página de 1280×720.
 
 ## Editar
 
-El contenido vive en `src/template.html`. `deck.html` es **generado**: no lo
+El contenido vive en `src/template.html`. `index.html` es **generado**: no lo
 edites a mano, se sobrescribe.
 
 ```bash
-python build.py    # src/template.html + assets/*.svg -> deck.html
+python build.py    # src/template.html + assets/*.svg -> index.html
 ```
 
 `build.py` inlinea los logos oficiales de `assets/` y los normaliza a
@@ -69,7 +69,7 @@ Convenciones que conviene respetar:
 ## Estructura
 
 ```
-deck.html            # el entregable: un solo archivo, autocontenido
+index.html           # el entregable: un solo archivo, autocontenido
 build.py             # inlinea los SVG en la plantilla
 src/template.html    # el contenido y los estilos (acá se edita)
 assets/

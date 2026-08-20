@@ -87,9 +87,10 @@ def build() -> None:
     if missing:
         raise SystemExit(f"Placeholders sin resolver: {sorted(set(missing))}")
 
-    out = ROOT / "deck.html"
+    # index.html y no deck.html: GitHub Pages sirve la raiz por ese nombre
+    out = ROOT / "index.html"
     out.write_text(template, encoding="utf-8")
-    print(f"deck.html -> {out.stat().st_size / 1024:.1f} KB")
+    print(f"index.html -> {out.stat().st_size / 1024:.1f} KB")
 
 
 if __name__ == "__main__":
