@@ -478,7 +478,14 @@ body {
 
 /* ─── Stats ───────────────────────────────────────────────────────────── */
 
-.stat-row { display: flex; flex-wrap: wrap; gap: 52px; }
+/* Rejilla y no flex-wrap: con columnas fijas una etiqueta larga parte en dos
+   lineas dentro de su columna, en vez de empujar la cifra entera a otra fila. */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px 36px;
+  align-items: start;
+}
 .stat { display: flex; flex-direction: column; gap: 6px; }
 .stat .v {
   font-family: var(--font-pixel);
@@ -491,7 +498,7 @@ body {
 .stat .l {
   font-family: var(--font-mono);
   font-size: 16px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
@@ -853,8 +860,8 @@ body {
         <p class="lead">Autenticación y gestión de usuarios completas. Llegan como <span class="bright">componentes que ya funcionan</span>, no como un SDK que te toca cablear.</p>
         <div class="stat-row fill" style="margin-top:10px;">
           <div class="stat"><span class="v">1</span><span class="l">Componente para tener login</span></div>
-          <div class="stat"><span class="v">0</span><span class="l">Tablas de usuarios que mantener</span></div>
-          <div class="stat"><span class="v">50K</span><span class="l">Usuarios retenidos gratis al mes</span></div>
+          <div class="stat"><span class="v">0</span><span class="l">Tablas que mantener</span></div>
+          <div class="stat"><span class="v">50K</span><span class="l">Usuarios retenidos gratis</span></div>
         </div>
         <a class="linkbar" href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer">
           <span>Y un dashboard de verdad: usuarios, sesiones, organizaciones y logs, sin que construyas un panel de admin.</span>
