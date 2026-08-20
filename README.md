@@ -7,9 +7,14 @@ de [crafter-station/the-next-craft](https://github.com/crafter-station/the-next-
 (su `DESIGN.md` es la fuente de verdad): blanco y negro estricto, negro cálido
 vintage, tipografía pixel PETSCII y `READY.█`.
 
+## Ver online
+
+**https://crafter-station.github.io/the-next-craft-clerk-deck/**
+
 ## Presentar
 
-Abre `index.html` en el navegador. No necesita servidor ni build: es un solo
+En vivo conviene la copia local (no depende del WiFi de la sala): abre
+`index.html` en el navegador. No necesita servidor ni build: es un solo
 archivo con todo dentro (las únicas peticiones externas son las fuentes de
 Google).
 
